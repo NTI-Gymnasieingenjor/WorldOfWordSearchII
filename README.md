@@ -5,7 +5,7 @@ The new and improved version of old word search.
 ```
 - The code must be commented and documented
 - All code must pass the respective tests
-- All commits shall be clean and concise
+- All commits shall be clean, concise and include co-authors
 - All members in the group must understand the code and approve the pull request
 ```
 
