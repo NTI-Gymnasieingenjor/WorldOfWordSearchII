@@ -1,4 +1,4 @@
-# WorldOfWordSearchII
+# World Of Word Search II
 The new and improved version of old word search.
 
 Definition of done
