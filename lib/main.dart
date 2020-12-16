@@ -17,7 +17,7 @@ class MyApp extends StatelessWidget {
         primarySwatch: Colors.blue,
         visualDensity: VisualDensity.adaptivePlatformDensity,
       ),
-      home: MyHomePage(title: 'Magnus testar'),
+      home: MyHomePage(title: 'Game Prototype'),
     );
   }
 }
@@ -32,18 +32,18 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  int _counter = 0;
   List<String> words = ['J', 'C', 'F', 'A', 'U', 'Ö', 'G', 'U', 'L'];
   List<String> usedWords = [];
 
-  void _incrementCounter() {
-    setState(() {
-      // This call to setState tells the Flutter framework that something has
-      // changed in this State, which causes it to rerun the build method below
-      // so that the display can reflect the updated values. If we changed
-      // _counter without calling setState(), then the build method would not be
-      // called again, and so nothing would appear to happen.
-      _counter++;
+  List<GlobalKey<_TileState>> listOfKeys = List<GlobalKey<_TileState>>.generate(
+      9, (int i) => GlobalKey<_TileState>());
+
+  void clear() {
+    usedWords.clear();
+    listOfKeys.forEach((GlobalKey<_TileState> key) {
+      key.currentState.setState(() {
+        key.currentState.baseColor = Colors.green;
+      });
     });
   }
 
@@ -59,6 +59,7 @@ class _MyHomePageState extends State<MyHomePage> {
               onPressed: () {
                 setState(() {
                   Navigator.pop(context);
+                  clear();
                 });
               },
             )
@@ -84,9 +85,10 @@ class _MyHomePageState extends State<MyHomePage> {
             shrinkWrap: true,
             padding: const EdgeInsets.all(2),
             crossAxisCount: 3,
-            children: List.generate(9, (word) {
+            children: List.generate(9, (index) {
               return Tile(
-                letter: words[word],
+                key: listOfKeys[index],
+                letter: words[index],
                 onClick: (String letter, bool selected) {
                   if (usedWords.length >= 3) {
                     developer.log(usedWords.toString());
@@ -100,6 +102,8 @@ class _MyHomePageState extends State<MyHomePage> {
 
                         usedWords = [];
                       }
+                    } else {
+                      usedWords.remove(letter);
                     }
                   }
                 },
@@ -113,7 +117,7 @@ class _MyHomePageState extends State<MyHomePage> {
 }
 
 class Tile extends StatefulWidget {
-  Tile({Key key, this.letter, this.onClick, this.winnerWinner})
+  const Tile({Key key, this.letter, this.onClick, this.winnerWinner})
       : super(key: key);
   final String letter;
   final void Function(String letter, bool selected) onClick;
@@ -132,7 +136,7 @@ class _TileState extends State<Tile> {
       onTap: () {
         widget.onClick(widget.letter, baseColor == colorClicked);
         setState(() {
-          baseColor = (baseColor == colorClicked ? Colors.green : colorClicked);
+          baseColor = baseColor == colorClicked ? Colors.green : colorClicked;
         });
       },
       child: Container(
