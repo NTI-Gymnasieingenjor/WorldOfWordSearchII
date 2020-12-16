@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import "dart:math" as math;
 import 'dart:collection';
+import 'dart:developer' as developer;
 
 void main() {
   runApp(MyApp());
@@ -46,6 +47,27 @@ class _MyHomePageState extends State<MyHomePage> {
     });
   }
 
+  void winnerWinner() {
+    showDialog<AlertDialog>(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text("You won!"),
+          actions: <Widget>[
+            MaterialButton(
+              child: const Text("Restart"),
+              onPressed: () {
+                setState(() {
+                  Navigator.pop(context);
+                });
+              },
+            )
+          ],
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     // This method is rerun every time setState is called, for instance as done
@@ -65,13 +87,20 @@ class _MyHomePageState extends State<MyHomePage> {
             children: List.generate(9, (word) {
               return Tile(
                 letter: words[word],
-                onClick: (String letter) {
+                onClick: (String letter, bool selected) {
                   if (usedWords.length >= 3) {
+                    developer.log(usedWords.toString());
                     usedWords = [];
-                    print(usedWords);
                   } else {
-                    usedWords.add(letter);
-                    print(usedWords);
+                    if (!selected) {
+                      usedWords.add(letter);
+                      developer.log(usedWords.toString());
+                      if (usedWords.join("") == ("JUL")) {
+                        winnerWinner();
+
+                        usedWords = [];
+                      }
+                    }
                   }
                 },
               );
@@ -84,31 +113,31 @@ class _MyHomePageState extends State<MyHomePage> {
 }
 
 class Tile extends StatefulWidget {
-  Tile({Key key, this.letter, this.onClick}) : super(key: key);
+  Tile({Key key, this.letter, this.onClick, this.winnerWinner})
+      : super(key: key);
   final String letter;
-  final void Function(String letter) onClick;
-  final bool Function() winnerWinner;
+  final void Function(String letter, bool selected) onClick;
+  final void Function() winnerWinner;
   @override
   _TileState createState() => _TileState();
 }
 
 class _TileState extends State<Tile> {
-  Color color_clicked = Color(0xff98fb98);
-  Color base_color = Colors.green;
+  Color colorClicked = Color(0xff98fb98);
+  Color baseColor = Colors.green;
 
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: () {
-        widget.onClick(widget.letter);
+        widget.onClick(widget.letter, baseColor == colorClicked);
         setState(() {
-          base_color =
-              (base_color == color_clicked ? Colors.green : color_clicked);
+          baseColor = (baseColor == colorClicked ? Colors.green : colorClicked);
         });
       },
       child: Container(
         margin: const EdgeInsets.all(4),
-        color: base_color,
+        color: baseColor,
         child: Center(
           child: Text(
             widget.letter,
