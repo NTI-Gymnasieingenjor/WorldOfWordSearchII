@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart';
 import "package:flutter/material.dart";
 
 void main() {
@@ -41,23 +42,59 @@ class MyHomePageState extends State<MyHomePage> {
   }
 
   void winnerWinner() async {
-    finishDialogOpen = true;
     await showDialog<AlertDialog>(
       context: context,
       builder: (BuildContext context) {
         finishDialogOpen = true;
-        return AlertDialog(
-          key: const Key("WonDialog"),
-          title: const Text("You won!"),
-          actions: <Widget>[
-            MaterialButton(
-              child: const Text("Restart"),
-              onPressed: () {
-                Navigator.pop(context);
-                finishDialogOpen = false;
-              },
-            )
-          ],
+        return Center(
+          child: Container(
+            constraints: const BoxConstraints(maxHeight: 300),
+            margin: const EdgeInsets.all(16),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(5),
+              child: Stack(
+                children: <Widget>[
+                  Image.asset("assets/present.png"),
+                  Column(
+                    mainAxisSize: MainAxisSize.max,
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: <Widget>[
+                      const Align(
+                        alignment: Alignment.topLeft,
+                        child: Padding(
+                          padding: EdgeInsets.only(left: 10, top: 4),
+                          child: Text(
+                            "You won!",
+                            style: TextStyle(
+                              color: Colors.white,
+                              decoration: TextDecoration.none,
+                              fontSize: 40,
+                            ),
+                          ),
+                        ),
+                      ),
+                      Align(
+                        alignment: Alignment.bottomRight,
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 5, horizontal: 5),
+                          child: CupertinoButton(
+                            color: Colors.yellow,
+                            borderRadius: BorderRadius.circular(5),
+                            padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 4),
+                            child: const Text("Restart", style: TextStyle(color: Colors.black)),
+                            onPressed: () {
+                              Navigator.pop(context);
+                              finishDialogOpen = false;
+                            },
+                          ),
+                        ),
+                      )
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ),
         );
       },
     );
@@ -67,32 +104,43 @@ class MyHomePageState extends State<MyHomePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
-      body: Center(
-        child: Container(
-          color: Colors.red,
-          child: GridView.count(
-            shrinkWrap: true,
-            padding: const EdgeInsets.all(2),
-            crossAxisCount: 3,
-            children: List<Widget>.generate(9, (int index) {
-              return Tile(
-                key: listOfKeys[index],
-                letter: words[index],
-                onClick: (String letter, bool selected) async {
-                  if (!selected) {
-                    usedWords.add(letter);
-                    if (usedWords.length >= 3) {
-                      if (usedWords.join("") == ("JUL")) winnerWinner();
-                      clear();
-                    }
-                  } else {
-                    usedWords.remove(letter);
-                  }
-                },
-              );
-            }),
+      body: Stack(
+        fit: StackFit.expand,
+        children: <Widget>[
+          Image.asset(
+            "assets/background.png",
+            alignment: Alignment.center,
+            fit: BoxFit.fill,
           ),
-        ),
+          Center(
+            child: Container(
+              margin: const EdgeInsets.all(10),
+              color: Colors.red,
+              child: GridView.count(
+                shrinkWrap: true,
+                padding: const EdgeInsets.all(2),
+                crossAxisCount: 3,
+                children: List<Widget>.generate(9, (int index) {
+                  return Tile(
+                    key: listOfKeys[index],
+                    letter: words[index],
+                    onClick: (String letter, bool selected) async {
+                      if (!selected) {
+                        usedWords.add(letter);
+                        if (usedWords.length >= 3) {
+                          if (usedWords.join("") == ("JUL")) winnerWinner();
+                          clear();
+                        }
+                      } else {
+                        usedWords.remove(letter);
+                      }
+                    },
+                  );
+                }),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
