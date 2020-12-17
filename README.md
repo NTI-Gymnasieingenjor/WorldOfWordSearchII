@@ -12,9 +12,16 @@ The new and improved version of old word search.
 ### Development environment standard
 ```
 - Visual Studio Code 1.52.0 and Newer.
-      Live Share.
-- Windows/Linux - Ubuntu 20.04.
-- Git Branches.
+      Live Share
+      Flutter
+      Dart
+      Awesome Flutter Snippets
+      
+- Windows/Linux - Ubuntu 20.04
+- Android studio 4.1.1
+      Android Emulator - Pixel_3a_API_30_x86
+      
+- Git Branches
 
     Branch names should use snake_case.
     Needs to be approved by at least 2 members of the group, besides the marge request creator.
