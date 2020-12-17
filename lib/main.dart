@@ -28,24 +28,24 @@ class MyHomePage extends StatefulWidget {
   final String title;
 
   @override
-  _MyHomePageState createState() => _MyHomePageState();
+  MyHomePageState createState() => MyHomePageState();
 }
 
-class _MyHomePageState extends State<MyHomePage> {
+class MyHomePageState extends State<MyHomePage> {
   List<String> words = ['J', 'C', 'F', 'A', 'U', 'Ö', 'G', 'U', 'L'];
   List<String> usedWords = [];
 
-  List<GlobalKey<_TileState>> listOfKeys = List<GlobalKey<_TileState>>.generate(
-      9, (int i) => GlobalKey<_TileState>());
-
   void clear() {
     usedWords.clear();
-    listOfKeys.forEach((GlobalKey<_TileState> key) {
+    listOfKeys.forEach((GlobalKey<TileState> key) {
       key.currentState.setState(() {
         key.currentState.baseColor = Colors.green;
       });
     });
   }
+
+  List<GlobalKey<TileState>> listOfKeys =
+      List<GlobalKey<TileState>>.generate(9, (int i) => GlobalKey<TileState>());
 
   void winnerWinner() {
     showDialog<AlertDialog>(
@@ -123,10 +123,10 @@ class Tile extends StatefulWidget {
   final void Function(String letter, bool selected) onClick;
   final void Function() winnerWinner;
   @override
-  _TileState createState() => _TileState();
+  TileState createState() => TileState();
 }
 
-class _TileState extends State<Tile> {
+class TileState extends State<Tile> {
   Color colorClicked = Color(0xff98fb98);
   Color baseColor = Colors.green;
 

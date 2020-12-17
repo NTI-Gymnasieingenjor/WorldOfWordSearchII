@@ -1,30 +1,30 @@
-// This is a basic Flutter widget test.
-//
-// To perform an interaction with a widget in your test, use the WidgetTester
-// utility that Flutter provides. For example, you can send tap and scroll
-// gestures. You can also use WidgetTester to find child widgets in the widget
-// tree, read text, and verify that the values of widget properties are correct.
+import "package:flutter/material.dart";
+import "package:flutter_test/flutter_test.dart";
 
-import 'package:flutter/material.dart';
-import 'package:flutter_test/flutter_test.dart';
-
-import 'package:WorldOfWordSearchII/main.dart';
+import "package:WorldOfWordSearchII/main.dart";
 
 void main() {
-  testWidgets('Counter increments smoke test', (WidgetTester tester) async {
-    // Build our app and trigger a frame.
+  testWidgets("When button pressed change color", (WidgetTester tester) async {
+    // ASSAMBLE
     await tester.pumpWidget(MyApp());
+    final Finder firstButton = find.byType(Tile).first;
+    final TileState state = tester.state(firstButton);
 
-    // Verify that our counter starts at 0.
-    expect(find.text('0'), findsOneWidget);
-    expect(find.text('1'), findsNothing);
-
-    // Tap the '+' icon and trigger a frame.
-    await tester.tap(find.byIcon(Icons.add));
+    // ACT
+    await tester.tap(firstButton);
     await tester.pump();
 
-    // Verify that our counter has incremented.
-    expect(find.text('0'), findsNothing);
-    expect(find.text('1'), findsOneWidget);
+    //ASSERT
+    final Color baseColor = state.baseColor;
+    final Color colorClicked = state.colorClicked;
+    expect(baseColor, colorClicked);
+  });
+
+  testWidgets("Test: usedWords is cleared", (WidgetTester tester) async {
+    await tester.pumpWidget(MyApp());
+    final MyHomePageState pageState = tester.state(find.byType(MyHomePage));
+
+    pageState.clear();
+    expect(pageState.usedWords.length, 0);
   });
 }
