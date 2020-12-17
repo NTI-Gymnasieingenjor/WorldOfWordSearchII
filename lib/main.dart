@@ -1,7 +1,4 @@
 import "package:flutter/material.dart";
-import "dart:math" as math;
-import "dart:collection";
-import "dart:developer" as developer;
 
 void main() {
   runApp(MyApp());
@@ -11,19 +8,15 @@ class MyApp extends StatelessWidget {
   // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
+    return const MaterialApp(
       title: "Flutter Demo",
-      theme: ThemeData(
-        primarySwatch: Colors.blue,
-        visualDensity: VisualDensity.adaptivePlatformDensity,
-      ),
       home: MyHomePage(title: "Game Prototype"),
     );
   }
 }
 
 class MyHomePage extends StatefulWidget {
-  MyHomePage({Key key, this.title}) : super(key: key);
+  const MyHomePage({Key key, this.title}) : super(key: key);
 
   final String title;
 
@@ -32,9 +25,11 @@ class MyHomePage extends StatefulWidget {
 }
 
 class MyHomePageState extends State<MyHomePage> {
-  bool finishDialogOpen = false;
   List<String> words = <String>["J", "U", "L", "A", "V", "Ö", "K", "B", "C"];
   List<String> usedWords = <String>[];
+  bool finishDialogOpen = false;
+
+  List<GlobalKey<TileState>> listOfKeys = List<GlobalKey<TileState>>.generate(9, (int i) => GlobalKey<TileState>());
 
   void clear() {
     usedWords.clear();
@@ -45,10 +40,7 @@ class MyHomePageState extends State<MyHomePage> {
     });
   }
 
-  List<GlobalKey<TileState>> listOfKeys =
-      List<GlobalKey<TileState>>.generate(9, (int i) => GlobalKey<TileState>());
-
-  void winnerWinner(BuildContext context) async {
+  void winnerWinner() async {
     finishDialogOpen = true;
     await showDialog<AlertDialog>(
       context: context,
@@ -61,29 +53,20 @@ class MyHomePageState extends State<MyHomePage> {
             MaterialButton(
               child: const Text("Restart"),
               onPressed: () {
-                setState(() {
-                  finishDialogOpen = false;
-                  Navigator.pop(context);
-                  clear();
-                });
+                Navigator.pop(context);
+                finishDialogOpen = false;
               },
             )
           ],
         );
       },
     );
-    // finishDialogOpen = false;
   }
 
   @override
   Widget build(BuildContext context) {
-    // This method is rerun every time setState is called, for instance as done
-    // by the _incrementCounter method above.
-    //
-    // The Flutter framework has been optimized to make rerunning build methods
-    // fast, so that you can just rebuild anything that needs updating rather
-    // than having to individually change instances of widgets.
     return Scaffold(
+      backgroundColor: Colors.white,
       body: Center(
         child: Container(
           color: Colors.red,
@@ -91,23 +74,19 @@ class MyHomePageState extends State<MyHomePage> {
             shrinkWrap: true,
             padding: const EdgeInsets.all(2),
             crossAxisCount: 3,
-            children: List.generate(9, (index) {
+            children: List<Widget>.generate(9, (int index) {
               return Tile(
                 key: listOfKeys[index],
                 letter: words[index],
-                onClick: (String letter, bool selected) {
-                  if (usedWords.length >= 3) {
-                    developer.log(usedWords.toString());
-                    usedWords = [];
-                  } else {
-                    if (!selected) {
-                      usedWords.add(letter);
-                      developer.log(usedWords.toString());
-                      if (usedWords.join("") == ("JUL")) {
-                        finishDialogOpen = true;
-                        winnerWinner(context);
-                      }
+                onClick: (String letter, bool selected) async {
+                  if (!selected) {
+                    usedWords.add(letter);
+                    if (usedWords.length >= 3) {
+                      if (usedWords.join("") == ("JUL")) winnerWinner();
+                      clear();
                     }
+                  } else {
+                    usedWords.remove(letter);
                   }
                 },
               );
@@ -120,8 +99,7 @@ class MyHomePageState extends State<MyHomePage> {
 }
 
 class Tile extends StatefulWidget {
-  const Tile({Key key, this.letter, this.onClick, this.winnerWinner})
-      : super(key: key);
+  const Tile({Key key, this.letter, this.onClick, this.winnerWinner}) : super(key: key);
   final String letter;
   final void Function(String letter, bool selected) onClick;
   final void Function() winnerWinner;
@@ -130,16 +108,17 @@ class Tile extends StatefulWidget {
 }
 
 class TileState extends State<Tile> {
-  Color colorClicked = Color(0xff98fb98);
+  Color colorClicked = const Color(0xff98fb98);
   Color baseColor = Colors.green;
 
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: () {
-        widget.onClick(widget.letter, baseColor == colorClicked);
         setState(() {
-          baseColor = baseColor == colorClicked ? Colors.green : colorClicked;
+          final bool selected = baseColor == colorClicked;
+          baseColor = selected ? Colors.green : colorClicked;
+          widget.onClick(widget.letter, selected);
         });
       },
       child: Container(
@@ -148,7 +127,7 @@ class TileState extends State<Tile> {
         child: Center(
           child: Text(
             widget.letter,
-            style: TextStyle(color: Colors.yellowAccent, fontSize: 35),
+            style: const TextStyle(color: Colors.yellowAccent, fontSize: 35),
           ),
         ),
       ),

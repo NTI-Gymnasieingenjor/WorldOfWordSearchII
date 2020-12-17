@@ -4,7 +4,7 @@ import "package:WorldOfWordSearchII/main.dart";
 
 void main() {
   testWidgets("When button pressed change color", (WidgetTester tester) async {
-    // ASSAMBLE
+    // ASSEMBLE
     await tester.pumpWidget(MyApp());
     final Finder firstButton = find.byType(Tile).first;
     final TileState state = tester.state(firstButton);
@@ -41,7 +41,6 @@ void main() {
     await tester.tap(lTile);
     await tester.pump();
 
-    print(pageState.usedWords);
     expect(pageState.finishDialogOpen, true);
   });
 }
