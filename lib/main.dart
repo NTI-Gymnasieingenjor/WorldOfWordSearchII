@@ -1,7 +1,7 @@
-import 'package:flutter/material.dart';
+import "package:flutter/material.dart";
 import "dart:math" as math;
-import 'dart:collection';
-import 'dart:developer' as developer;
+import "dart:collection";
+import "dart:developer" as developer;
 
 void main() {
   runApp(MyApp());
@@ -12,12 +12,12 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Flutter Demo',
+      title: "Flutter Demo",
       theme: ThemeData(
         primarySwatch: Colors.blue,
         visualDensity: VisualDensity.adaptivePlatformDensity,
       ),
-      home: MyHomePage(title: 'Game Prototype'),
+      home: MyHomePage(title: "Game Prototype"),
     );
   }
 }
@@ -32,8 +32,9 @@ class MyHomePage extends StatefulWidget {
 }
 
 class MyHomePageState extends State<MyHomePage> {
-  List<String> words = ['J', 'C', 'F', 'A', 'U', 'Ö', 'G', 'U', 'L'];
-  List<String> usedWords = [];
+  bool finishDialogOpen = false;
+  List<String> words = <String>["J", "U", "L", "A", "V", "Ö", "K", "B", "C"];
+  List<String> usedWords = <String>[];
 
   void clear() {
     usedWords.clear();
@@ -47,17 +48,21 @@ class MyHomePageState extends State<MyHomePage> {
   List<GlobalKey<TileState>> listOfKeys =
       List<GlobalKey<TileState>>.generate(9, (int i) => GlobalKey<TileState>());
 
-  void winnerWinner() {
-    showDialog<AlertDialog>(
+  void winnerWinner(BuildContext context) async {
+    finishDialogOpen = true;
+    await showDialog<AlertDialog>(
       context: context,
       builder: (BuildContext context) {
+        finishDialogOpen = true;
         return AlertDialog(
+          key: const Key("WonDialog"),
           title: const Text("You won!"),
           actions: <Widget>[
             MaterialButton(
               child: const Text("Restart"),
               onPressed: () {
                 setState(() {
+                  finishDialogOpen = false;
                   Navigator.pop(context);
                   clear();
                 });
@@ -67,6 +72,7 @@ class MyHomePageState extends State<MyHomePage> {
         );
       },
     );
+    // finishDialogOpen = false;
   }
 
   @override
@@ -98,12 +104,9 @@ class MyHomePageState extends State<MyHomePage> {
                       usedWords.add(letter);
                       developer.log(usedWords.toString());
                       if (usedWords.join("") == ("JUL")) {
-                        winnerWinner();
-
-                        usedWords = [];
+                        finishDialogOpen = true;
+                        winnerWinner(context);
                       }
-                    } else {
-                      usedWords.remove(letter);
                     }
                   }
                 },
