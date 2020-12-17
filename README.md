@@ -29,6 +29,15 @@ The new and improved version of old word search.
 Git Command Reference - https://about.gitlab.com/images/press/git-cheat-sheet.pdf.
 ```
 
+### Setup Flutter
+```
+To install framework Flutter which is required for this project follow instructions showed in the link from official Flutter website.
+
+Linux install: https://flutter.dev/docs/get-started/install/linux
+
+Windows install: https://flutter.dev/docs/get-started/install/windows
+```
+
 ### Coding Standard
 ```
 - snake_case: file names.
