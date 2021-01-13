@@ -147,9 +147,9 @@ class MyHomePageState extends State<MyHomePage> {
                       if (!selected) {
                         usedWords.add(letter);
                         if (usedWords.length >= 3) {
-                          if (hasWon())
+                          if (hasWon()) {
                             winnerWinner();
-                          else {
+                          } else {
                             FirebaseDatabase.instance
                                 .reference()
                                 .child("AmountOfLosses")
