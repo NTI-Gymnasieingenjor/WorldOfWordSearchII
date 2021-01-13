@@ -50,9 +50,9 @@ class MyHomePageState extends State<MyHomePage> {
   void winnerWinner() async {
     FirebaseDatabase.instance
         .reference()
-        .child("AmountOfGames")
+        .child("AmountOfWins")
         .once()
-        .then((value) => FirebaseDatabase.instance.reference().child("AmountOfGames").set((int.parse(value.value.toString()) ?? 0) + 1)
+        .then((value) => FirebaseDatabase.instance.reference().child("AmountOfWins").set((int.parse(value.value.toString()) ?? 0) + 1)
     );
     await showDialog<AlertDialog>(
       context: context,
@@ -145,7 +145,23 @@ class MyHomePageState extends State<MyHomePage> {
                         usedWords.add(letter);
                         if (usedWords.length >= 3) {
                           if (usedWords.join("") == ("JUL")) winnerWinner();
+                          else{
+                            FirebaseDatabase.instance
+                            .reference()
+                            .child("AmountOfLosses")
+                            .once()
+                            .then((value) => FirebaseDatabase.instance.reference().child("AmountOfLosses").set((int.parse(value.value.toString()) ?? 0) + 1)
+                        ); 
+
+                          }
                           clear();
+
+                        FirebaseDatabase.instance
+                        .reference()
+                        .child("AmountOfGames")
+                        .once()
+                        .then((value) => FirebaseDatabase.instance.reference().child("AmountOfGames").set((int.parse(value.value.toString()) ?? 0) + 1)
+                        ); 
                         }
                       } else {
                         usedWords.remove(letter);
@@ -181,6 +197,12 @@ class TileState extends State<Tile> {
     return GestureDetector(
       onTap: () {
         setState(() {
+            FirebaseDatabase.instance
+            .reference()
+            .child("AmountOfClicks")
+            .once()
+            .then((value) => FirebaseDatabase.instance.reference().child("AmountOfClicks").set((int.parse(value.value.toString()) ?? 0) + 1)
+            );
           final bool selected = baseColor == colorClicked;
           baseColor = selected ? Colors.green : colorClicked;
           widget.onClick(widget.letter, selected);
