@@ -47,13 +47,16 @@ class MyHomePageState extends State<MyHomePage> {
     });
   }
 
+  bool hasWon() {
+    return usedWords.join("") == ("JUL");
+  }
+
   void winnerWinner() async {
-    FirebaseDatabase.instance
-        .reference()
-        .child("AmountOfWins")
-        .once()
-        .then((value) => FirebaseDatabase.instance.reference().child("AmountOfWins").set((int.parse(value.value.toString()) ?? 0) + 1)
-    );
+    FirebaseDatabase.instance.reference().child("AmountOfWins").once().then(
+        (value) => FirebaseDatabase.instance
+            .reference()
+            .child("AmountOfWins")
+            .set((int.parse(value.value.toString()) ?? 0) + 1));
     await showDialog<AlertDialog>(
       context: context,
       builder: (BuildContext context) {
@@ -144,24 +147,32 @@ class MyHomePageState extends State<MyHomePage> {
                       if (!selected) {
                         usedWords.add(letter);
                         if (usedWords.length >= 3) {
-                          if (usedWords.join("") == ("JUL")) winnerWinner();
-                          else{
+                          if (hasWon())
+                            winnerWinner();
+                          else {
                             FirebaseDatabase.instance
-                            .reference()
-                            .child("AmountOfLosses")
-                            .once()
-                            .then((value) => FirebaseDatabase.instance.reference().child("AmountOfLosses").set((int.parse(value.value.toString()) ?? 0) + 1)
-                        ); 
-
+                                .reference()
+                                .child("AmountOfLosses")
+                                .once()
+                                .then((value) => FirebaseDatabase.instance
+                                    .reference()
+                                    .child("AmountOfLosses")
+                                    .set((int.parse(value.value.toString()) ??
+                                            0) +
+                                        1));
                           }
                           clear();
 
-                        FirebaseDatabase.instance
-                        .reference()
-                        .child("AmountOfGames")
-                        .once()
-                        .then((value) => FirebaseDatabase.instance.reference().child("AmountOfGames").set((int.parse(value.value.toString()) ?? 0) + 1)
-                        ); 
+                          FirebaseDatabase.instance
+                              .reference()
+                              .child("AmountOfGames")
+                              .once()
+                              .then((value) => FirebaseDatabase.instance
+                                  .reference()
+                                  .child("AmountOfGames")
+                                  .set(
+                                      (int.parse(value.value.toString()) ?? 0) +
+                                          1));
                         }
                       } else {
                         usedWords.remove(letter);
@@ -197,12 +208,14 @@ class TileState extends State<Tile> {
     return GestureDetector(
       onTap: () {
         setState(() {
-            FirebaseDatabase.instance
-            .reference()
-            .child("AmountOfClicks")
-            .once()
-            .then((value) => FirebaseDatabase.instance.reference().child("AmountOfClicks").set((int.parse(value.value.toString()) ?? 0) + 1)
-            );
+          FirebaseDatabase.instance
+              .reference()
+              .child("AmountOfClicks")
+              .once()
+              .then((value) => FirebaseDatabase.instance
+                  .reference()
+                  .child("AmountOfClicks")
+                  .set((int.parse(value.value.toString()) ?? 0) + 1));
           final bool selected = baseColor == colorClicked;
           baseColor = selected ? Colors.green : colorClicked;
           widget.onClick(widget.letter, selected);
