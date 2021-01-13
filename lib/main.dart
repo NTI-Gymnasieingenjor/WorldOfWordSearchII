@@ -1,4 +1,4 @@
-import 'package:flutter/cupertino.dart';
+import "package:flutter/cupertino.dart";
 import "package:flutter/material.dart";
 
 void main() {
@@ -26,11 +26,16 @@ class MyHomePage extends StatefulWidget {
 }
 
 class MyHomePageState extends State<MyHomePage> {
-  List<String> words = <String>["J", "U", "L", "A", "V", "Ö", "K", "B", "C"];
+  List<List<String>> words = [
+    ["J", "U", "L"],
+    ["A", "V", "Ö"],
+    ["K", "B", "C"],
+  ];
   List<String> usedWords = <String>[];
   bool finishDialogOpen = false;
 
-  List<GlobalKey<TileState>> listOfKeys = List<GlobalKey<TileState>>.generate(9, (int i) => GlobalKey<TileState>());
+  List<GlobalKey<TileState>> listOfKeys =
+      List<GlobalKey<TileState>>.generate(9, (int i) => GlobalKey<TileState>());
 
   void clear() {
     usedWords.clear();
@@ -76,12 +81,15 @@ class MyHomePageState extends State<MyHomePage> {
                       Align(
                         alignment: Alignment.bottomRight,
                         child: Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 5, horizontal: 5),
+                          padding: const EdgeInsets.symmetric(
+                              vertical: 5, horizontal: 5),
                           child: CupertinoButton(
                             color: Colors.yellow,
                             borderRadius: BorderRadius.circular(5),
-                            padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 4),
-                            child: const Text("Restart", style: TextStyle(color: Colors.black)),
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 32, vertical: 4),
+                            child: const Text("Restart",
+                                style: TextStyle(color: Colors.black)),
                             onPressed: () {
                               Navigator.pop(context);
                               finishDialogOpen = false;
@@ -147,7 +155,8 @@ class MyHomePageState extends State<MyHomePage> {
 }
 
 class Tile extends StatefulWidget {
-  const Tile({Key key, this.letter, this.onClick, this.winnerWinner}) : super(key: key);
+  const Tile({Key key, this.letter, this.onClick, this.winnerWinner})
+      : super(key: key);
   final String letter;
   final void Function(String letter, bool selected) onClick;
   final void Function() winnerWinner;
