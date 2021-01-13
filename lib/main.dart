@@ -131,7 +131,7 @@ class MyHomePageState extends State<MyHomePage> {
                 children: List<Widget>.generate(9, (int index) {
                   return Tile(
                     key: listOfKeys[index],
-                    letter: words[index],
+                    letter: words[(index / words.length).floor()][index % words.length],
                     onClick: (String letter, bool selected) async {
                       if (!selected) {
                         usedWords.add(letter);
