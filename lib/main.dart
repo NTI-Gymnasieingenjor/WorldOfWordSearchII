@@ -48,6 +48,12 @@ class MyHomePageState extends State<MyHomePage> {
   }
 
   void winnerWinner() async {
+    FirebaseDatabase.instance
+        .reference()
+        .child("AmountOfGames")
+        .once()
+        .then((value) => FirebaseDatabase.instance.reference().child("AmountOfGames").set((int.parse(value.value.toString()) ?? 0) + 1)
+    );
     await showDialog<AlertDialog>(
       context: context,
       builder: (BuildContext context) {
