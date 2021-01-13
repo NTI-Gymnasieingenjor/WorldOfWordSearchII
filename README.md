@@ -41,8 +41,8 @@ Windows install: https://flutter.dev/docs/get-started/install/windows
 ### Coding Standard
 ```
 - snake_case: file names.
-- UppterCamelCase: classes.
-- lowetCamelCase: variables, functions.
+- UpperCamelCase: classes.
+- lowerCamelCase: variables, functions.
 and everything that isn't featured above, you can find on this website => https://dart.dev/guides/language/effective-dart/style#dont-use-prefix-letters.
 
 - We make tests via Flutters built-in tools.
