@@ -1,5 +1,3 @@
-import 'dart:io';
-
 import "package:flutter/material.dart";
 import "package:flutter_test/flutter_test.dart";
 import "package:WorldOfWordSearchII/main.dart";
@@ -29,8 +27,8 @@ void main() {
     final MyHomePageState pageState = tester.state(find.byType(MyHomePage));
 
     pageState.clear();
-    print(pageState.usedWords);
-    expect(pageState.usedWords.length, 0);
+    print(pageState.usedLetters);
+    expect(pageState.usedLetters.length, 0);
   });
 
   testWidgets("description", (WidgetTester tester) async {

@@ -17,12 +17,6 @@ class MyApp extends StatelessWidget {
   }
 }
 
-class Char {
-  const Char(this.pos, this.char);
-  final int pos;
-  final String char;
-}
-
 class MyHomePage extends StatefulWidget {
   const MyHomePage({Key key, this.title}) : super(key: key);
 
@@ -35,17 +29,19 @@ class MyHomePage extends StatefulWidget {
 class MyHomePageState extends State<MyHomePage> {
   bool loadedWords = false;
 
-  List<int> usedWords = <int>[];
+  List<int> usedLetters = <int>[];
+  List<String> correctWords = <String>[];
+  List<String> originalWords = <String>[];
   bool finishDialogOpen = false;
 
   List<GlobalKey<TileState>> listOfKeys = List<GlobalKey<TileState>>.generate(9, (int i) => GlobalKey<TileState>());
 
-  Future<dynamic> getWords() async {
-    return (await FirebaseDatabase.instance.reference().child("Levels").child("1").once()).value;
-  }
+  Future<dynamic> getWords() async =>
+      (await FirebaseDatabase.instance.reference().child("Levels").child("1").once()).value;
 
+  // Clears all tiles
   void clear() {
-    usedWords.clear();
+    usedLetters.clear();
     if (loadedWords) {
       listOfKeys.forEach((GlobalKey<TileState> key) {
         key.currentState.setState(() {
@@ -56,8 +52,9 @@ class MyHomePageState extends State<MyHomePage> {
   }
 
   void winnerWinner() async {
-    FirebaseDatabase.instance.reference().child("AmountOfWins").once().then((DataSnapshot value) =>
-        FirebaseDatabase.instance.reference().child("AmountOfWins").set((int.parse(value.value.toString()) ?? 0) + 1));
+    correctWords = originalWords;
+    final DatabaseReference winsRef = FirebaseDatabase.instance.reference().child("AmountOfWins");
+    winsRef.once().then((DataSnapshot value) => winsRef.set((int.parse(value.value.toString()) ?? 0) + 1));
     await showDialog<AlertDialog>(
       context: context,
       builder: (BuildContext context) {
@@ -116,13 +113,14 @@ class MyHomePageState extends State<MyHomePage> {
     );
   }
 
-  bool hasWon(List<String> correctWords) => correctWords.where((String e) => usedWords.join(",") == e).isNotEmpty;
+  // Removes one word from the list if the user has selected the word
+  bool hasWon() => (correctWords = correctWords.where((String e) => usedLetters.join(",") != e).toList()).isEmpty;
 
   @override
   Widget build(BuildContext context) {
     final MediaQueryData mqData = MediaQuery.of(context);
     const double gridMargin = 20;
-    // Scales the grid to fit
+    // Scales the grid to fit the screen
     double gridSize = 200;
     if (mqData.size.height > mqData.size.width) {
       final double horPadding = mqData.padding.left + mqData.padding.right;
@@ -149,65 +147,66 @@ class MyHomePageState extends State<MyHomePage> {
                 margin: const EdgeInsets.all(gridMargin / 2),
                 color: Colors.red,
                 child: FutureBuilder<dynamic>(
-                    future: getWords(),
-                    builder: (BuildContext context, AsyncSnapshot<dynamic> snapshot) {
-                      if (!snapshot.hasData) return Container();
-                      loadedWords = true;
-                      final dynamic data = snapshot.data;
+                  future: getWords(),
+                  builder: (BuildContext context, AsyncSnapshot<dynamic> snapshot) {
+                    if (!snapshot.hasData) return Container();
+                    loadedWords = true;
+                    // Gets the column and row child count
+                    final int rowSize = int.parse(snapshot.data["gridSize"]?.toString());
 
-                      final int rowSize = int.parse(data["gridSize"]?.toString());
+                    originalWords =
+                        (snapshot.data["correctWords"] as List<dynamic>).map((dynamic e) => e.toString()).toList();
+                    correctWords = originalWords;
 
-                      final List<String> correctWords =
-                          (data["correctWords"] as List<dynamic>).map((dynamic e) => e.toString()).toList();
-
-                      final List<List<Char>> words = <List<Char>>[];
-                      final String letters = data["letters"].toString();
-                      int index = 0;
-                      for (final String char in letters.split("")) {
-                        final int row = (index / rowSize).floor();
-                        if (words.isEmpty || words.length == row) words.add(<Char>[]);
-                        words[row].add(Char(index, char));
-                        index++;
-                      }
-                      return GridView.count(
-                        childAspectRatio: 1,
-                        physics: const NeverScrollableScrollPhysics(),
-                        shrinkWrap: true,
-                        padding: const EdgeInsets.all(2),
-                        crossAxisCount: rowSize,
-                        children: List<Widget>.generate(9, (int index) {
-                          return Tile(
-                            key: listOfKeys[index],
-                            char: words[(index / words.length).floor()][index % words.length],
-                            onClick: (Char char, bool selected) async {
-                              if (!selected) {
-                                usedWords.add(char.pos);
-                                usedWords.sort();
-                                if (usedWords.length >= 3) {
-                                  if (hasWon(correctWords)) {
-                                    winnerWinner();
-                                  } else {
-                                    final DatabaseReference ref =
-                                        FirebaseDatabase.instance.reference().child("AmountOfLosses");
-                                    ref.once().then(
-                                        (DataSnapshot value) => ref.set((int.parse(value.value.toString()) ?? 0) + 1));
-                                  }
-                                  clear();
-
-                                  FirebaseDatabase.instance.reference().child("AmountOfGames").once().then(
-                                      (DataSnapshot value) => FirebaseDatabase.instance
-                                          .reference()
-                                          .child("AmountOfGames")
-                                          .set((int.parse(value.value.toString()) ?? 0) + 1));
+                    // [["M", "A", "G"], ["N", "U", "S"], ["M", "O", "R"]]
+                    final List<List<Char>> words = <List<Char>>[];
+                    int i = 0;
+                    for (final String char in snapshot.data["letters"].toString().split("")) {
+                      final int row = (i / rowSize).floor();
+                      if (words.isEmpty || words.length == row) words.add(<Char>[]);
+                      words[row].add(Char(i, char));
+                      i++;
+                    }
+                    return GridView.count(
+                      childAspectRatio: 1,
+                      physics: const NeverScrollableScrollPhysics(),
+                      shrinkWrap: true,
+                      padding: const EdgeInsets.all(2),
+                      crossAxisCount: rowSize,
+                      children: List<Widget>.generate(
+                        rowSize * rowSize,
+                        (int index) => Tile(
+                          key: listOfKeys[index],
+                          char: words[(index / rowSize).floor()][index % rowSize],
+                          onClick: (Char char, bool selected) async {
+                            if (!selected) {
+                              usedLetters.add(char.id);
+                              usedLetters.sort();
+                              if (usedLetters.length >= rowSize) {
+                                if (hasWon()) {
+                                  winnerWinner();
+                                } else {
+                                  final DatabaseReference lossesRef =
+                                      FirebaseDatabase.instance.reference().child("AmountOfLosses");
+                                  lossesRef.once().then((DataSnapshot value) =>
+                                      lossesRef.set((int.parse(value.value.toString()) ?? 0) + 1));
                                 }
-                              } else {
-                                usedWords.remove(char.pos);
+                                clear();
+
+                                final DatabaseReference gamesRef =
+                                    FirebaseDatabase.instance.reference().child("AmountOfGames");
+                                gamesRef.once().then(
+                                    (DataSnapshot value) => gamesRef.set((int.parse(value.value.toString()) ?? 0) + 1));
                               }
-                            },
-                          );
-                        }),
-                      );
-                    }),
+                            } else {
+                              usedLetters.remove(char.id);
+                            }
+                          },
+                        ),
+                      ),
+                    );
+                  },
+                ),
               ),
             ),
           ),
@@ -235,11 +234,8 @@ class TileState extends State<Tile> {
     return GestureDetector(
       onTap: () {
         setState(() {
-          FirebaseDatabase.instance.reference().child("AmountOfClicks").once().then((DataSnapshot value) =>
-              FirebaseDatabase.instance
-                  .reference()
-                  .child("AmountOfClicks")
-                  .set((int.parse(value.value.toString()) ?? 0) + 1));
+          final DatabaseReference clicksRef = FirebaseDatabase.instance.reference().child("AmountOfClicks");
+          clicksRef.once().then((DataSnapshot value) => clicksRef.set((int.parse(value.value.toString()) ?? 0) + 1));
           final bool selected = baseColor == colorClicked;
           baseColor = selected ? Colors.green : colorClicked;
           widget.onClick(widget.char, selected);
@@ -250,11 +246,17 @@ class TileState extends State<Tile> {
         color: baseColor,
         child: Center(
           child: Text(
-            widget.char.char,
+            widget.char.char.toUpperCase(),
             style: const TextStyle(color: Colors.yellowAccent, fontSize: 35),
           ),
         ),
       ),
     );
   }
+}
+
+class Char {
+  const Char(this.id, this.char);
+  final int id;
+  final String char;
 }
