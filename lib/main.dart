@@ -1,3 +1,4 @@
+import "package:firebase_database/firebase_database.dart";
 import "package:flutter/cupertino.dart";
 import "package:flutter/material.dart";
 
@@ -26,27 +27,34 @@ class MyHomePage extends StatefulWidget {
 }
 
 class MyHomePageState extends State<MyHomePage> {
-  List<List<String>> words = [
-    ["J", "U", "L"],
-    ["A", "V", "Ö"],
-    ["K", "B", "C"],
-  ];
-  List<String> usedWords = <String>[];
+  bool loadedWords = false;
+
+  List<int> usedLetters = <int>[];
+  List<String> correctWords = <String>[];
+  List<String> originalWords = <String>[];
   bool finishDialogOpen = false;
 
-  List<GlobalKey<TileState>> listOfKeys =
-      List<GlobalKey<TileState>>.generate(9, (int i) => GlobalKey<TileState>());
+  List<GlobalKey<TileState>> listOfKeys = List<GlobalKey<TileState>>.generate(9, (int i) => GlobalKey<TileState>());
 
+  Future<dynamic> getWords() async =>
+      (await FirebaseDatabase.instance.reference().child("Levels").child("1").once()).value;
+
+  // Clears all tiles
   void clear() {
-    usedWords.clear();
-    listOfKeys.forEach((GlobalKey<TileState> key) {
-      key.currentState.setState(() {
-        key.currentState.baseColor = Colors.green;
+    usedLetters.clear();
+    if (loadedWords) {
+      listOfKeys.forEach((GlobalKey<TileState> key) {
+        key.currentState.setState(() {
+          key.currentState.baseColor = Colors.green;
+        });
       });
-    });
+    }
   }
 
   void winnerWinner() async {
+    correctWords = originalWords;
+    final DatabaseReference winsRef = FirebaseDatabase.instance.reference().child("AmountOfWins");
+    winsRef.once().then((DataSnapshot value) => winsRef.set((int.parse(value.value.toString()) ?? 0) + 1));
     await showDialog<AlertDialog>(
       context: context,
       builder: (BuildContext context) {
@@ -81,15 +89,12 @@ class MyHomePageState extends State<MyHomePage> {
                       Align(
                         alignment: Alignment.bottomRight,
                         child: Padding(
-                          padding: const EdgeInsets.symmetric(
-                              vertical: 5, horizontal: 5),
+                          padding: const EdgeInsets.symmetric(vertical: 5, horizontal: 5),
                           child: CupertinoButton(
                             color: Colors.yellow,
                             borderRadius: BorderRadius.circular(5),
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 32, vertical: 4),
-                            child: const Text("Restart",
-                                style: TextStyle(color: Colors.black)),
+                            padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 4),
+                            child: const Text("Restart", style: TextStyle(color: Colors.black)),
                             onPressed: () {
                               Navigator.pop(context);
                               finishDialogOpen = false;
@@ -108,8 +113,22 @@ class MyHomePageState extends State<MyHomePage> {
     );
   }
 
+  // Removes one word from the list if the user has selected the word
+  bool hasWon() => (correctWords = correctWords.where((String e) => usedLetters.join(",") != e).toList()).isEmpty;
+
   @override
   Widget build(BuildContext context) {
+    final MediaQueryData mqData = MediaQuery.of(context);
+    const double gridMargin = 20;
+    // Scales the grid to fit the screen
+    double gridSize = 200;
+    if (mqData.size.height > mqData.size.width) {
+      final double horPadding = mqData.padding.left + mqData.padding.right;
+      gridSize = mqData.size.width - gridMargin - horPadding;
+    } else {
+      final double vertPadding = mqData.padding.top + mqData.padding.bottom;
+      gridSize = mqData.size.height - gridMargin - vertPadding;
+    }
     return Scaffold(
       backgroundColor: Colors.white,
       body: Stack(
@@ -118,33 +137,76 @@ class MyHomePageState extends State<MyHomePage> {
           Image.asset(
             "assets/background.png",
             alignment: Alignment.center,
-            fit: BoxFit.fill,
+            fit: BoxFit.cover,
           ),
           Center(
-            child: Container(
-              margin: const EdgeInsets.all(10),
-              color: Colors.red,
-              child: GridView.count(
-                shrinkWrap: true,
-                padding: const EdgeInsets.all(2),
-                crossAxisCount: 3,
-                children: List<Widget>.generate(9, (int index) {
-                  return Tile(
-                    key: listOfKeys[index],
-                    letter: words[(index / words.length).floor()][index % words.length],
-                    onClick: (String letter, bool selected) async {
-                      if (!selected) {
-                        usedWords.add(letter);
-                        if (usedWords.length >= 3) {
-                          if (usedWords.join("") == ("JUL")) winnerWinner();
-                          clear();
-                        }
-                      } else {
-                        usedWords.remove(letter);
-                      }
-                    },
-                  );
-                }),
+            child: SafeArea(
+              child: Container(
+                height: gridSize,
+                width: gridSize,
+                margin: const EdgeInsets.all(gridMargin / 2),
+                color: Colors.red,
+                child: FutureBuilder<dynamic>(
+                  future: getWords(),
+                  builder: (BuildContext context, AsyncSnapshot<dynamic> snapshot) {
+                    if (!snapshot.hasData) return Container();
+                    loadedWords = true;
+                    // Gets the column and row child count
+                    final int rowSize = int.parse(snapshot.data["gridSize"]?.toString());
+
+                    originalWords =
+                        (snapshot.data["correctWords"] as List<dynamic>).map((dynamic e) => e.toString()).toList();
+                    correctWords = originalWords;
+
+                    // [["M", "A", "G"], ["N", "U", "S"], ["M", "O", "R"]]
+                    final List<List<Char>> words = <List<Char>>[];
+                    int i = 0;
+                    for (final String char in snapshot.data["letters"].toString().split("")) {
+                      final int row = (i / rowSize).floor();
+                      if (words.isEmpty || words.length == row) words.add(<Char>[]);
+                      words[row].add(Char(i, char));
+                      i++;
+                    }
+                    return GridView.count(
+                      childAspectRatio: 1,
+                      physics: const NeverScrollableScrollPhysics(),
+                      shrinkWrap: true,
+                      padding: const EdgeInsets.all(2),
+                      crossAxisCount: rowSize,
+                      children: List<Widget>.generate(
+                        rowSize * rowSize,
+                        (int index) => Tile(
+                          key: listOfKeys[index],
+                          char: words[(index / rowSize).floor()][index % rowSize],
+                          onClick: (Char char, bool selected) async {
+                            if (!selected) {
+                              usedLetters.add(char.id);
+                              usedLetters.sort();
+                              if (usedLetters.length >= rowSize) {
+                                if (hasWon()) {
+                                  winnerWinner();
+                                } else {
+                                  final DatabaseReference lossesRef =
+                                      FirebaseDatabase.instance.reference().child("AmountOfLosses");
+                                  lossesRef.once().then((DataSnapshot value) =>
+                                      lossesRef.set((int.parse(value.value.toString()) ?? 0) + 1));
+                                }
+                                clear();
+
+                                final DatabaseReference gamesRef =
+                                    FirebaseDatabase.instance.reference().child("AmountOfGames");
+                                gamesRef.once().then(
+                                    (DataSnapshot value) => gamesRef.set((int.parse(value.value.toString()) ?? 0) + 1));
+                              }
+                            } else {
+                              usedLetters.remove(char.id);
+                            }
+                          },
+                        ),
+                      ),
+                    );
+                  },
+                ),
               ),
             ),
           ),
@@ -155,10 +217,9 @@ class MyHomePageState extends State<MyHomePage> {
 }
 
 class Tile extends StatefulWidget {
-  const Tile({Key key, this.letter, this.onClick, this.winnerWinner})
-      : super(key: key);
-  final String letter;
-  final void Function(String letter, bool selected) onClick;
+  const Tile({Key key, this.char, this.onClick, this.winnerWinner}) : super(key: key);
+  final Char char;
+  final void Function(Char letter, bool selected) onClick;
   final void Function() winnerWinner;
   @override
   TileState createState() => TileState();
@@ -173,9 +234,11 @@ class TileState extends State<Tile> {
     return GestureDetector(
       onTap: () {
         setState(() {
+          final DatabaseReference clicksRef = FirebaseDatabase.instance.reference().child("AmountOfClicks");
+          clicksRef.once().then((DataSnapshot value) => clicksRef.set((int.parse(value.value.toString()) ?? 0) + 1));
           final bool selected = baseColor == colorClicked;
           baseColor = selected ? Colors.green : colorClicked;
-          widget.onClick(widget.letter, selected);
+          widget.onClick(widget.char, selected);
         });
       },
       child: Container(
@@ -183,11 +246,17 @@ class TileState extends State<Tile> {
         color: baseColor,
         child: Center(
           child: Text(
-            widget.letter,
+            widget.char.char.toUpperCase(),
             style: const TextStyle(color: Colors.yellowAccent, fontSize: 35),
           ),
         ),
       ),
     );
   }
+}
+
+class Char {
+  const Char(this.id, this.char);
+  final int id;
+  final String char;
 }

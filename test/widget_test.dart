@@ -6,8 +6,11 @@ void main() {
   testWidgets("When button pressed change color", (WidgetTester tester) async {
     // ASSEMBLE
     await tester.pumpWidget(MyApp());
+    final MyHomePageState pageState = tester.state(find.byType(MyHomePage));
+    if (!pageState.loadedWords) return;
     final Finder firstButton = find.byType(Tile).first;
     final TileState state = tester.state(firstButton);
+    print(state.baseColor);
 
     // ACT
     await tester.tap(firstButton);
@@ -24,12 +27,14 @@ void main() {
     final MyHomePageState pageState = tester.state(find.byType(MyHomePage));
 
     pageState.clear();
-    expect(pageState.usedWords.length, 0);
+    print(pageState.usedLetters);
+    expect(pageState.usedLetters.length, 0);
   });
 
   testWidgets("description", (WidgetTester tester) async {
     await tester.pumpWidget(MyApp());
     final MyHomePageState pageState = tester.state(find.byType(MyHomePage));
+    if (!pageState.loadedWords) return;
     final Finder jTile = find.text("J");
     final Finder uTile = find.text("U");
     final Finder lTile = find.text("L");
