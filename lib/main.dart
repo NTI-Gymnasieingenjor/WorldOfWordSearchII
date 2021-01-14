@@ -17,6 +17,12 @@ class MyApp extends StatelessWidget {
   }
 }
 
+class Char {
+  const Char(this.pos, this.char);
+  final int pos;
+  final String char;
+}
+
 class MyHomePage extends StatefulWidget {
   const MyHomePage({Key key, this.title}) : super(key: key);
 
@@ -27,36 +33,31 @@ class MyHomePage extends StatefulWidget {
 }
 
 class MyHomePageState extends State<MyHomePage> {
-  List<List<String>> words = [
-    ["J", "U", "L"],
-    ["A", "V", "Ö"],
-    ["K", "B", "C"],
-  ];
-  List<String> usedWords = <String>[];
+  bool loadedWords = false;
+
+  List<int> usedWords = <int>[];
   bool finishDialogOpen = false;
 
-  List<GlobalKey<TileState>> listOfKeys =
-      List<GlobalKey<TileState>>.generate(9, (int i) => GlobalKey<TileState>());
+  List<GlobalKey<TileState>> listOfKeys = List<GlobalKey<TileState>>.generate(9, (int i) => GlobalKey<TileState>());
+
+  Future<dynamic> getWords() async {
+    return (await FirebaseDatabase.instance.reference().child("Levels").child("1").once()).value;
+  }
 
   void clear() {
     usedWords.clear();
-    listOfKeys.forEach((GlobalKey<TileState> key) {
-      key.currentState.setState(() {
-        key.currentState.baseColor = Colors.green;
+    if (loadedWords) {
+      listOfKeys.forEach((GlobalKey<TileState> key) {
+        key.currentState.setState(() {
+          key.currentState.baseColor = Colors.green;
+        });
       });
-    });
-  }
-
-  bool hasWon() {
-    return usedWords.join("") == ("JUL");
+    }
   }
 
   void winnerWinner() async {
-    FirebaseDatabase.instance.reference().child("AmountOfWins").once().then(
-        (value) => FirebaseDatabase.instance
-            .reference()
-            .child("AmountOfWins")
-            .set((int.parse(value.value.toString()) ?? 0) + 1));
+    FirebaseDatabase.instance.reference().child("AmountOfWins").once().then((DataSnapshot value) =>
+        FirebaseDatabase.instance.reference().child("AmountOfWins").set((int.parse(value.value.toString()) ?? 0) + 1));
     await showDialog<AlertDialog>(
       context: context,
       builder: (BuildContext context) {
@@ -91,15 +92,12 @@ class MyHomePageState extends State<MyHomePage> {
                       Align(
                         alignment: Alignment.bottomRight,
                         child: Padding(
-                          padding: const EdgeInsets.symmetric(
-                              vertical: 5, horizontal: 5),
+                          padding: const EdgeInsets.symmetric(vertical: 5, horizontal: 5),
                           child: CupertinoButton(
                             color: Colors.yellow,
                             borderRadius: BorderRadius.circular(5),
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 32, vertical: 4),
-                            child: const Text("Restart",
-                                style: TextStyle(color: Colors.black)),
+                            padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 4),
+                            child: const Text("Restart", style: TextStyle(color: Colors.black)),
                             onPressed: () {
                               Navigator.pop(context);
                               finishDialogOpen = false;
@@ -118,8 +116,21 @@ class MyHomePageState extends State<MyHomePage> {
     );
   }
 
+  bool hasWon(List<String> correctWords) => correctWords.where((String e) => usedWords.join(",") == e).isNotEmpty;
+
   @override
   Widget build(BuildContext context) {
+    final MediaQueryData mqData = MediaQuery.of(context);
+    const double gridMargin = 20;
+    // Scales the grid to fit
+    double gridSize = 200;
+    if (mqData.size.height > mqData.size.width) {
+      final double horPadding = mqData.padding.left + mqData.padding.right;
+      gridSize = mqData.size.width - gridMargin - horPadding;
+    } else {
+      final double vertPadding = mqData.padding.top + mqData.padding.bottom;
+      gridSize = mqData.size.height - gridMargin - vertPadding;
+    }
     return Scaffold(
       backgroundColor: Colors.white,
       body: Stack(
@@ -128,58 +139,75 @@ class MyHomePageState extends State<MyHomePage> {
           Image.asset(
             "assets/background.png",
             alignment: Alignment.center,
-            fit: BoxFit.fill,
+            fit: BoxFit.cover,
           ),
           Center(
-            child: Container(
-              margin: const EdgeInsets.all(10),
-              color: Colors.red,
-              child: GridView.count(
-                shrinkWrap: true,
-                padding: const EdgeInsets.all(2),
-                crossAxisCount: 3,
-                children: List<Widget>.generate(9, (int index) {
-                  return Tile(
-                    key: listOfKeys[index],
-                    letter: words[(index / words.length).floor()]
-                        [index % words.length],
-                    onClick: (String letter, bool selected) async {
-                      if (!selected) {
-                        usedWords.add(letter);
-                        if (usedWords.length >= 3) {
-                          if (hasWon()) {
-                            winnerWinner();
-                          } else {
-                            FirebaseDatabase.instance
-                                .reference()
-                                .child("AmountOfLosses")
-                                .once()
-                                .then((value) => FirebaseDatabase.instance
-                                    .reference()
-                                    .child("AmountOfLosses")
-                                    .set((int.parse(value.value.toString()) ??
-                                            0) +
-                                        1));
-                          }
-                          clear();
+            child: SafeArea(
+              child: Container(
+                height: gridSize,
+                width: gridSize,
+                margin: const EdgeInsets.all(gridMargin / 2),
+                color: Colors.red,
+                child: FutureBuilder<dynamic>(
+                    future: getWords(),
+                    builder: (BuildContext context, AsyncSnapshot<dynamic> snapshot) {
+                      if (!snapshot.hasData) return Container();
+                      loadedWords = true;
+                      final dynamic data = snapshot.data;
 
-                          FirebaseDatabase.instance
-                              .reference()
-                              .child("AmountOfGames")
-                              .once()
-                              .then((value) => FirebaseDatabase.instance
-                                  .reference()
-                                  .child("AmountOfGames")
-                                  .set(
-                                      (int.parse(value.value.toString()) ?? 0) +
-                                          1));
-                        }
-                      } else {
-                        usedWords.remove(letter);
+                      final int rowSize = int.parse(data["gridSize"]?.toString());
+
+                      final List<String> correctWords =
+                          (data["correctWords"] as List<dynamic>).map((dynamic e) => e.toString()).toList();
+
+                      final List<List<Char>> words = <List<Char>>[];
+                      final String letters = data["letters"].toString();
+                      int index = 0;
+                      for (final String char in letters.split("")) {
+                        final int row = (index / rowSize).floor();
+                        if (words.isEmpty || words.length == row) words.add(<Char>[]);
+                        words[row].add(Char(index, char));
+                        index++;
                       }
-                    },
-                  );
-                }),
+                      return GridView.count(
+                        childAspectRatio: 1,
+                        physics: const NeverScrollableScrollPhysics(),
+                        shrinkWrap: true,
+                        padding: const EdgeInsets.all(2),
+                        crossAxisCount: rowSize,
+                        children: List<Widget>.generate(9, (int index) {
+                          return Tile(
+                            key: listOfKeys[index],
+                            char: words[(index / words.length).floor()][index % words.length],
+                            onClick: (Char char, bool selected) async {
+                              if (!selected) {
+                                usedWords.add(char.pos);
+                                usedWords.sort();
+                                if (usedWords.length >= 3) {
+                                  if (hasWon(correctWords)) {
+                                    winnerWinner();
+                                  } else {
+                                    final DatabaseReference ref =
+                                        FirebaseDatabase.instance.reference().child("AmountOfLosses");
+                                    ref.once().then(
+                                        (DataSnapshot value) => ref.set((int.parse(value.value.toString()) ?? 0) + 1));
+                                  }
+                                  clear();
+
+                                  FirebaseDatabase.instance.reference().child("AmountOfGames").once().then(
+                                      (DataSnapshot value) => FirebaseDatabase.instance
+                                          .reference()
+                                          .child("AmountOfGames")
+                                          .set((int.parse(value.value.toString()) ?? 0) + 1));
+                                }
+                              } else {
+                                usedWords.remove(char.pos);
+                              }
+                            },
+                          );
+                        }),
+                      );
+                    }),
               ),
             ),
           ),
@@ -190,10 +218,9 @@ class MyHomePageState extends State<MyHomePage> {
 }
 
 class Tile extends StatefulWidget {
-  const Tile({Key key, this.letter, this.onClick, this.winnerWinner})
-      : super(key: key);
-  final String letter;
-  final void Function(String letter, bool selected) onClick;
+  const Tile({Key key, this.char, this.onClick, this.winnerWinner}) : super(key: key);
+  final Char char;
+  final void Function(Char letter, bool selected) onClick;
   final void Function() winnerWinner;
   @override
   TileState createState() => TileState();
@@ -208,17 +235,14 @@ class TileState extends State<Tile> {
     return GestureDetector(
       onTap: () {
         setState(() {
-          FirebaseDatabase.instance
-              .reference()
-              .child("AmountOfClicks")
-              .once()
-              .then((value) => FirebaseDatabase.instance
+          FirebaseDatabase.instance.reference().child("AmountOfClicks").once().then((DataSnapshot value) =>
+              FirebaseDatabase.instance
                   .reference()
                   .child("AmountOfClicks")
                   .set((int.parse(value.value.toString()) ?? 0) + 1));
           final bool selected = baseColor == colorClicked;
           baseColor = selected ? Colors.green : colorClicked;
-          widget.onClick(widget.letter, selected);
+          widget.onClick(widget.char, selected);
         });
       },
       child: Container(
@@ -226,7 +250,7 @@ class TileState extends State<Tile> {
         color: baseColor,
         child: Center(
           child: Text(
-            widget.letter,
+            widget.char.char,
             style: const TextStyle(color: Colors.yellowAccent, fontSize: 35),
           ),
         ),
