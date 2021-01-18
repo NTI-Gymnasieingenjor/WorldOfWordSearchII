@@ -45,7 +45,7 @@ class MyHomePageState extends State<MyHomePage> {
     if (loadedWords) {
       listOfKeys.forEach((GlobalKey<TileState> key) {
         key.currentState.setState(() {
-          key.currentState.baseColor = Colors.green;
+          key.currentState.baseColor = Colors.yellow;
         });
       });
     }
@@ -67,7 +67,7 @@ class MyHomePageState extends State<MyHomePage> {
               borderRadius: BorderRadius.circular(5),
               child: Stack(
                 children: <Widget>[
-                  Image.asset("assets/present.png"),
+                  Image.asset("assets/Ratwithegg.png"),
                   Column(
                     mainAxisSize: MainAxisSize.max,
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -145,7 +145,7 @@ class MyHomePageState extends State<MyHomePage> {
                 height: gridSize,
                 width: gridSize,
                 margin: const EdgeInsets.all(gridMargin / 2),
-                color: Colors.red,
+                color: Colors.purple,
                 child: FutureBuilder<dynamic>(
                   future: getWords(),
                   builder: (BuildContext context, AsyncSnapshot<dynamic> snapshot) {
@@ -153,7 +153,8 @@ class MyHomePageState extends State<MyHomePage> {
                     loadedWords = true;
                     // Gets the column and row child count
                     final int rowSize = int.parse(snapshot.data["gridSize"]?.toString());
-                    listOfKeys = List<GlobalKey<TileState>>.generate(rowSize * rowSize, (int i) => GlobalKey<TileState>());
+                    listOfKeys =
+                        List<GlobalKey<TileState>>.generate(rowSize * rowSize, (int i) => GlobalKey<TileState>());
 
                     originalWords =
                         (snapshot.data["correctWords"] as List<dynamic>).map((dynamic e) => e.toString()).toList();
@@ -183,22 +184,22 @@ class MyHomePageState extends State<MyHomePage> {
                             if (!selected) {
                               usedLetters.add(char.id);
                               usedLetters.sort();
-                              if (usedLetters.length >= rowSize) {
-                                if (hasWon()) {
-                                  winnerWinner();
-                                } else {
-                                  final DatabaseReference lossesRef =
-                                      FirebaseDatabase.instance.reference().child("AmountOfLosses");
-                                  lossesRef.once().then((DataSnapshot value) =>
-                                      lossesRef.set((int.parse(value.value.toString()) ?? 0) + 1));
-                                }
+                              if (hasWon()) {
+                                winnerWinner();
                                 clear();
-
-                                final DatabaseReference gamesRef =
-                                    FirebaseDatabase.instance.reference().child("AmountOfGames");
-                                gamesRef.once().then(
-                                    (DataSnapshot value) => gamesRef.set((int.parse(value.value.toString()) ?? 0) + 1));
+                              } else {
+                                final DatabaseReference lossesRef =
+                                    FirebaseDatabase.instance.reference().child("AmountOfLosses");
+                                lossesRef.once().then((DataSnapshot value) =>
+                                    lossesRef.set((int.parse(value.value.toString()) ?? 0) + 1));
+                                if (usedLetters.length >= rowSize) {
+                                  clear();
+                                }
                               }
+                              final DatabaseReference gamesRef =
+                                  FirebaseDatabase.instance.reference().child("AmountOfGames");
+                              gamesRef.once().then(
+                                  (DataSnapshot value) => gamesRef.set((int.parse(value.value.toString()) ?? 0) + 1));
                             } else {
                               usedLetters.remove(char.id);
                             }
@@ -228,7 +229,7 @@ class Tile extends StatefulWidget {
 
 class TileState extends State<Tile> {
   Color colorClicked = const Color(0xff98fb98);
-  Color baseColor = Colors.green;
+  Color baseColor = Colors.yellow;
 
   @override
   Widget build(BuildContext context) {
@@ -238,7 +239,7 @@ class TileState extends State<Tile> {
           final DatabaseReference clicksRef = FirebaseDatabase.instance.reference().child("AmountOfClicks");
           clicksRef.once().then((DataSnapshot value) => clicksRef.set((int.parse(value.value.toString()) ?? 0) + 1));
           final bool selected = baseColor == colorClicked;
-          baseColor = selected ? Colors.green : colorClicked;
+          baseColor = selected ? Colors.yellow : colorClicked;
           widget.onClick(widget.char, selected);
         });
       },
@@ -248,7 +249,7 @@ class TileState extends State<Tile> {
         child: Center(
           child: Text(
             widget.char.char.toUpperCase(),
-            style: const TextStyle(color: Colors.yellowAccent, fontSize: 35),
+            style: const TextStyle(color: Colors.pinkAccent, fontSize: 35),
           ),
         ),
       ),
