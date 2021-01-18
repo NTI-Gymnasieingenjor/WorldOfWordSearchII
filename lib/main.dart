@@ -34,7 +34,7 @@ class MyHomePageState extends State<MyHomePage> {
   List<String> originalWords = <String>[];
   bool finishDialogOpen = false;
 
-  List<GlobalKey<TileState>> listOfKeys = List<GlobalKey<TileState>>.generate(9, (int i) => GlobalKey<TileState>());
+  List<GlobalKey<TileState>> listOfKeys;
 
   Future<dynamic> getWords() async =>
       (await FirebaseDatabase.instance.reference().child("Levels").child("1").once()).value;
@@ -153,6 +153,7 @@ class MyHomePageState extends State<MyHomePage> {
                     loadedWords = true;
                     // Gets the column and row child count
                     final int rowSize = int.parse(snapshot.data["gridSize"]?.toString());
+                    listOfKeys = List<GlobalKey<TileState>>.generate(rowSize * rowSize, (int i) => GlobalKey<TileState>());
 
                     originalWords =
                         (snapshot.data["correctWords"] as List<dynamic>).map((dynamic e) => e.toString()).toList();
