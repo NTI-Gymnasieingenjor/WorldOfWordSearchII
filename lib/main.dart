@@ -161,14 +161,15 @@ class MyHomePageState extends State<MyHomePage> {
                     correctWords = originalWords;
 
                     // [["M", "A", "G"], ["N", "U", "S"], ["M", "O", "R"]]
-                    final List<List<Char>> words = <List<Char>>[];
-                    int i = 0;
-                    for (final String char in snapshot.data["letters"].toString().split("")) {
-                      final int row = (i / rowSize).floor();
-                      if (words.isEmpty || words.length == row) words.add(<Char>[]);
-                      words[row].add(Char(i, char));
-                      i++;
-                    }
+                    final List<String> allWords = snapshot.data["letters"].toString().split("");
+                    final List<List<Char>> words = List<List<Char>>.generate(rowSize, (int i) {
+                      int index = 0;
+                      return allWords
+                          .getRange(i * rowSize, (i * rowSize) + rowSize)
+                          .toList()
+                          .map((String e) => Char(index++ + (i * rowSize), e))
+                          .toList();
+                    });
                     return GridView.count(
                       childAspectRatio: 1,
                       physics: const NeverScrollableScrollPhysics(),
