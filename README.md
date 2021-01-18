@@ -33,7 +33,7 @@ Git Command Reference - https://about.gitlab.com/images/press/git-cheat-sheet.pd
 ```
 To install framework Flutter which is required for this project follow instructions showed in the link from official Flutter website.
 
-Linux install: https://flutter.dev/docs/get-started/install/linux
+Linux install: https://flutter.dev/docs/get-started/install/linux (Not WSL or WSL2)
 
 Windows install: https://flutter.dev/docs/get-started/install/windows
 ```
