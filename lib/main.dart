@@ -185,6 +185,7 @@ class MyHomePageState extends State<MyHomePage> {
                             if (!selected) {
                               usedLetters.add(char.id);
                               usedLetters.sort();
+                              final int correctWordsLen = correctWords.length;
                               if (hasWon()) {
                                 winnerWinner();
                                 clear();
@@ -193,9 +194,7 @@ class MyHomePageState extends State<MyHomePage> {
                                     FirebaseDatabase.instance.reference().child("AmountOfLosses");
                                 lossesRef.once().then((DataSnapshot value) =>
                                     lossesRef.set((int.parse(value.value.toString()) ?? 0) + 1));
-                                if (usedLetters.length >= rowSize) {
-                                  clear();
-                                }
+                                if (correctWordsLen != correctWords.length || usedLetters.length >= rowSize) clear();
                               }
                               final DatabaseReference gamesRef =
                                   FirebaseDatabase.instance.reference().child("AmountOfGames");
