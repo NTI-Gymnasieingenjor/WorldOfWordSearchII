@@ -1,3 +1,4 @@
+import "dart:developer" as dev;
 import "package:firebase_database/firebase_database.dart";
 import "package:flutter/cupertino.dart";
 import "package:flutter/material.dart";
@@ -13,32 +14,22 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return const MaterialApp(
       title: "Flutter Demo",
-      home: MyHomePage(title: "Game Prototype"),
+      home: MyHomePage(
+        rowSize: 7,
+        numberOfWords: 5,
+      ),
     );
   }
 }
 
 class MyHomePage extends StatefulWidget {
-  const MyHomePage({Key key, this.title}) : super(key: key);
+  const MyHomePage({Key key, @required this.rowSize, @required this.numberOfWords}) : super(key: key);
 
-  final String title;
+  final int rowSize;
+  final int numberOfWords;
 
   @override
   MyHomePageState createState() => MyHomePageState();
-}
-
-class Word {
-  Word(this.word, this.grid, List<int> positions, List<int> directions) {
-    this.positions = List<int>.from(positions);
-    this.positions.shuffle();
-    this.directions = List<int>.from(directions);
-    this.directions.shuffle();
-  }
-
-  String word;
-  List<int> positions;
-  List<int> directions;
-  List<Char> grid;
 }
 
 class MyHomePageState extends State<MyHomePage> {
@@ -46,71 +37,61 @@ class MyHomePageState extends State<MyHomePage> {
 
   List<int> usedLetters = <int>[];
   List<String> correctWords = <String>[];
-  List<String> originalWords = <String>[];
   bool finishDialogOpen = false;
 
   List<GlobalKey<TileState>> listOfKeys;
 
-  // Gets words from Firebase
-  Future<dynamic> getWords() async =>
-      (await FirebaseDatabase.instance.reference().child("Levels").child("1").once()).value;
+  @override
+  void initState() {
+    super.initState();
+    listOfKeys =
+        List<GlobalKey<TileState>>.generate(widget.rowSize * widget.rowSize, (int i) => GlobalKey<TileState>());
+  }
 
   List<Char> tryWord(List<Char> grid, String word, int gridSize, int position, int dir) {
     final int xPos = position % gridSize;
     final int yPos = (position / gridSize).floor();
-    switch (dir) {
-      case 0:
-        // Horizontal
-        if (xPos > gridSize - word.length) return null;
-        int index = xPos;
-        for (final String char in word.split("").toList()) {
-          final int i = index + (gridSize * yPos);
-          if (grid[i] != null || grid[i]?.char != char) return null;
-          grid[i] = Char(i, char);
-          index++;
-        }
-        break;
-      case 1:
-        // Vertical
-        if (yPos > gridSize - word.length) return null;
-        int index = yPos;
-        for (final String char in word.split("").toList()) {
-          final int i = xPos + (gridSize * index);
-          if (grid[i] != null || grid[i]?.char != char) return null;
-          grid[i] = Char(i, char);
-          index++;
-        }
-        break;
-      case 2:
-        // Diagonally
-        if (yPos > gridSize - word.length || xPos > gridSize - word.length) return null;
-        int index = yPos;
-        int diag = 0;
-        for (final String char in word.split("").toList()) {
-          final int i = xPos + (gridSize * index) + diag;
-          if (grid[i] != null || grid[i]?.char != char) return null;
-          grid[i] = Char(i, char);
-          index++;
-          diag++;
-        }
-        break;
-      default:
+    final List<int> indices = <int>[];
+    int diagInc = 0;
+    int index = dir == 0 ? xPos : yPos;
+    if ((dir == 1 || dir == 2) && yPos > gridSize - word.length) return null;
+    if ((dir == 0 || dir == 2) && xPos > gridSize - word.length) return null;
+
+    for (final String char in word.split("").toList()) {
+      int i = dir == 0 ? (index + gridSize * yPos) : (xPos + gridSize * index);
+      if (dir == 2) {
+        i += diagInc;
+        diagInc++;
+      }
+      if (grid[i] == null || grid[i].char == char) {
+        indices.add(i);
+        index++;
+      } else {
+        return null;
+      }
     }
-    return grid;
+    final List<Char> tempGrid = List<Char>.from(grid);
+    int tempIndex = 0;
+    for (final int pos in indices) {
+      tempGrid[pos] = Char(pos, word[tempIndex]);
+      tempIndex++;
+    }
+    correctWords.add(indices.join(","));
+    return tempGrid;
   }
 
   List<Char> generateGrid(List<String> words, int gridSize) {
+    correctWords.clear();
+    usedLetters.clear();
     words.shuffle();
     final List<int> positions = List<int>.generate(gridSize * gridSize, (int index) => index);
     final List<int> directions = List<int>.generate(3, (int index) => index);
 
     final List<Word> wordStack = <Word>[];
 
-    int wordIndex = 0;
+    wordStack.add(Word(words[0], List<Char>(gridSize * gridSize), positions, directions));
 
-    wordStack.add(Word(words[wordIndex], List<Char>(gridSize * gridSize), positions, directions));
-
-    while (wordIndex < words.length) {
+    while (true) {
       if (wordStack.isEmpty) {
         throw Exception("Word does not fit on the grid");
       }
@@ -124,29 +105,20 @@ class MyHomePageState extends State<MyHomePage> {
       final int dir = wordStack.last.directions.removeLast();
 
       if (wordStack.last.positions.isEmpty) {
-        wordIndex--;
         wordStack.removeLast();
       } else {
         final int pos = wordStack.last.positions.last;
         final List<Char> grid = tryWord(wordStack.last.grid, wordStack.last.word, gridSize, pos, dir);
         if (grid != null) {
-          if (wordIndex < words.length - 1) {
-            wordIndex++;
-            wordStack.add(Word(words[wordIndex], grid, positions, directions));
+          if (wordStack.length < words.length) {
+            wordStack.add(Word(words[wordStack.length], grid, positions, directions));
           } else {
+            wordStack.add(Word(words[0], grid, positions, directions));
             break;
           }
         }
       }
     }
-
-    /*for (int i = 0; i < grid.length; i++) {
-      if (wordStack.grid[i] == null) {
-        
-      }
-    }*/
-
-    print(wordStack.last.grid);
 
     return wordStack.last.grid;
   }
@@ -157,14 +129,15 @@ class MyHomePageState extends State<MyHomePage> {
     if (loadedWords) {
       listOfKeys.forEach((GlobalKey<TileState> key) {
         key.currentState.setState(() {
-          key.currentState.baseColor = Colors.yellow;
+          key.currentState.baseColor = key.currentState.normalColor;
+          key.currentState.notSelected = true;
         });
       });
     }
   }
 
   void winnerWinner() async {
-    correctWords = originalWords;
+    // TODO(EVERYONE): REGENERATE!
     final DatabaseReference winsRef = FirebaseDatabase.instance.reference().child("AmountOfWins");
     winsRef.once().then((DataSnapshot value) => winsRef.set((int.parse(value.value.toString()) ?? 0) + 1));
     await showDialog<AlertDialog>(
@@ -259,81 +232,67 @@ class MyHomePageState extends State<MyHomePage> {
                 margin: const EdgeInsets.all(gridMargin / 2),
                 color: Colors.purple,
                 child: FutureBuilder<dynamic>(
-                  future: getWords(),
-                  builder: (BuildContext context, AsyncSnapshot<dynamic> snapshot) {
-                    if (!snapshot.hasData) return Container();
-                    return FutureBuilder<dynamic>(
-                      future: rootBundle.loadString("assets/words.txt"),
-                      builder: (BuildContext context, AsyncSnapshot<dynamic> wordsSnapshot) {
-                        if (!wordsSnapshot.hasData) return Container();
-                        loadedWords = true;
-                        // Gets the column and row child count
-                        final int rowSize = int.parse(snapshot.data["gridSize"]?.toString());
-                        listOfKeys =
-                            List<GlobalKey<TileState>>.generate(rowSize * rowSize, (int i) => GlobalKey<TileState>());
+                  future: rootBundle.loadString("assets/words.txt"),
+                  builder: (BuildContext context, AsyncSnapshot<dynamic> wordsSnapshot) {
+                    if (!wordsSnapshot.hasData) return Container();
+                    loadedWords = true;
 
-                        originalWords =
-                            (snapshot.data["correctWords"] as List<dynamic>).map((dynamic e) => e.toString()).toList();
-                        correctWords = originalWords;
+                    final List<String> data = (wordsSnapshot.data as String).split("\r\n");
+                    final List<String> compatibleWords =
+                        data.where((String w) => w.length >= 2 && w.length <= widget.rowSize && w != "step").toList();
+                    compatibleWords.shuffle();
+                    final List<String> words = compatibleWords.getRange(0, widget.numberOfWords).toList();
+                    dev.log(words.toString());
+                    final List<Char> grid = generateGrid(words, widget.rowSize);
 
-                        final List<String> data = (wordsSnapshot.data as String).split("\n");
-                        final List<String> compatibleWords =
-                            data.where((String w) => w.length >= 2 && w.length <= rowSize).toList();
-                        compatibleWords.shuffle();
-                        final List<String> words2 = compatibleWords.getRange(0, 4).toList();
-                        print(words2);
+                    return GridView.count(
+                      childAspectRatio: 1,
+                      physics: const NeverScrollableScrollPhysics(),
+                      shrinkWrap: true,
+                      padding: const EdgeInsets.all(2),
+                      crossAxisCount: widget.rowSize,
+                      children: List<Widget>.generate(
+                        widget.rowSize * widget.rowSize,
+                        (int index) => Tile(
+                          key: listOfKeys[index],
+                          char: Char(index, grid[index]?.char ?? "_"),
+                          onClick: (Char char, bool notSelected) async {
+                            if (!notSelected) {
+                              usedLetters.add(char.id);
+                              usedLetters.sort();
+                              final int correctWordsLen = correctWords.length;
+                              if (hasWon()) {
+                                winnerWinner();
+                                clear();
+                              } else {
+                                final DatabaseReference lossesRef =
+                                    FirebaseDatabase.instance.reference().child("AmountOfLosses");
+                                lossesRef.once().then((DataSnapshot value) =>
+                                    lossesRef.set((int.parse(value.value.toString()) ?? 0) + 1));
 
-                        final List<Char> grid = generateGrid(words2, rowSize);
-                        print(grid);
-
-                        final List<String> allWords = snapshot.data["letters"].toString().split("");
-                        final List<List<Char>> words = List<List<Char>>.generate(rowSize, (int i) {
-                          int index = 0;
-                          return allWords
-                              .getRange(i * rowSize, (i * rowSize) + rowSize)
-                              .toList()
-                              .map((String e) => Char(index++ + (i * rowSize), e))
-                              .toList();
-                        });
-                        return GridView.count(
-                          childAspectRatio: 1,
-                          physics: const NeverScrollableScrollPhysics(),
-                          shrinkWrap: true,
-                          padding: const EdgeInsets.all(2),
-                          crossAxisCount: rowSize,
-                          children: List<Widget>.generate(
-                            rowSize * rowSize,
-                            (int index) => Tile(
-                              key: listOfKeys[index],
-                              char: words[(index / rowSize).floor()][index % rowSize],
-                              onClick: (Char char, bool selected) async {
-                                if (!selected) {
-                                  usedLetters.add(char.id);
-                                  usedLetters.sort();
-                                  final int correctWordsLen = correctWords.length;
-                                  if (hasWon()) {
-                                    winnerWinner();
-                                    clear();
-                                  } else {
-                                    final DatabaseReference lossesRef =
-                                        FirebaseDatabase.instance.reference().child("AmountOfLosses");
-                                    lossesRef.once().then((DataSnapshot value) =>
-                                        lossesRef.set((int.parse(value.value.toString()) ?? 0) + 1));
-                                    if (correctWordsLen != correctWords.length || usedLetters.length >= rowSize)
-                                      clear();
+                                // If word was correct but not all words selected
+                                if (correctWordsLen != correctWords.length) {
+                                  dev.log(correctWords.length.toString());
+                                  for (final int pos in usedLetters) {
+                                    final GlobalKey<TileState> key = listOfKeys[pos];
+                                    key.currentState.setState(() {
+                                      key.currentState.setCorrect();
+                                    });
                                   }
-                                  final DatabaseReference gamesRef =
-                                      FirebaseDatabase.instance.reference().child("AmountOfGames");
-                                  gamesRef.once().then((DataSnapshot value) =>
-                                      gamesRef.set((int.parse(value.value.toString()) ?? 0) + 1));
-                                } else {
-                                  usedLetters.remove(char.id);
+                                  clear();
                                 }
-                              },
-                            ),
-                          ),
-                        );
-                      },
+                                if (usedLetters.length >= widget.rowSize) clear();
+                              }
+                              final DatabaseReference gamesRef =
+                                  FirebaseDatabase.instance.reference().child("AmountOfGames");
+                              gamesRef.once().then(
+                                  (DataSnapshot value) => gamesRef.set((int.parse(value.value.toString()) ?? 0) + 1));
+                            } else {
+                              usedLetters.remove(char.id);
+                            }
+                          },
+                        ),
+                      ),
                     );
                   },
                 ),
@@ -356,19 +315,25 @@ class Tile extends StatefulWidget {
 }
 
 class TileState extends State<Tile> {
-  Color colorClicked = const Color(0xff98fb98);
+  bool notSelected = true;
+  final Color colorClicked = const Color(0xff98fb98);
+  Color normalColor = Colors.yellow;
   Color baseColor = Colors.yellow;
+
+  void setCorrect() {
+    normalColor = Colors.white;
+  }
 
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: () {
+        notSelected = !notSelected;
         setState(() {
           final DatabaseReference clicksRef = FirebaseDatabase.instance.reference().child("AmountOfClicks");
           clicksRef.once().then((DataSnapshot value) => clicksRef.set((int.parse(value.value.toString()) ?? 0) + 1));
-          final bool selected = baseColor == colorClicked;
-          baseColor = selected ? Colors.yellow : colorClicked;
-          widget.onClick(widget.char, selected);
+          baseColor = notSelected ? normalColor : colorClicked;
+          widget.onClick(widget.char, notSelected);
         });
       },
       child: Container(
@@ -390,4 +355,23 @@ class Char {
   final int id;
 
   final String char;
+
+  @override
+  String toString() {
+    return char;
+  }
+}
+
+class Word {
+  Word(this.word, this.grid, List<int> positions, List<int> directions) {
+    this.positions = List<int>.from(positions);
+    this.positions.shuffle();
+    this.directions = List<int>.from(directions);
+    this.directions.shuffle();
+  }
+
+  String word;
+  List<int> positions;
+  List<int> directions;
+  List<Char> grid;
 }
