@@ -1,5 +1,5 @@
 import "dart:developer" as dev;
-import 'dart:math';
+import "dart:math";
 import "package:firebase_database/firebase_database.dart";
 import "package:flutter/cupertino.dart";
 import "package:flutter/material.dart";
@@ -10,14 +10,13 @@ void main() {
 }
 
 class MyApp extends StatelessWidget {
-  // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
     return const MaterialApp(
       title: "Flutter Demo",
       home: MyHomePage(
         rowSize: 7,
-        numberOfWords: 2,
+        numberOfWords: 3,
       ),
     );
   }
@@ -34,20 +33,12 @@ class MyHomePage extends StatefulWidget {
 }
 
 class MyHomePageState extends State<MyHomePage> {
-  bool loadedWords = false;
-
   List<int> usedLetters = <int>[];
   List<String> correctWords = <String>[];
   bool finishDialogOpen = false;
+  Random rand = Random();
 
   List<GlobalKey<TileState>> listOfKeys;
-
-  @override
-  void initState() {
-    super.initState();
-    listOfKeys =
-        List<GlobalKey<TileState>>.generate(widget.rowSize * widget.rowSize, (int i) => GlobalKey<TileState>());
-  }
 
   List<Char> tryWord(List<Char> grid, String word, int gridSize, int position, int dir) {
     final int xPos = position % gridSize;
@@ -107,6 +98,7 @@ class MyHomePageState extends State<MyHomePage> {
 
       if (wordStack.last.positions.isEmpty) {
         wordStack.removeLast();
+        correctWords.removeLast();
       } else {
         final int pos = wordStack.last.positions.last;
         final List<Char> grid = tryWord(wordStack.last.grid, wordStack.last.word, gridSize, pos, dir);
@@ -121,11 +113,9 @@ class MyHomePageState extends State<MyHomePage> {
       }
     }
 
-    Random rng = Random();
-
     for (int i = 0; i < wordStack.last.grid.length; i++) {
       if (wordStack.last.grid[i] == null) {
-        wordStack.last.grid[i] = Char(i, String.fromCharCode(rng.nextInt(26) + 65));
+        wordStack.last.grid[i] = Char(i, String.fromCharCode(rand.nextInt(26) + 65));
       }
     }
 
@@ -135,14 +125,12 @@ class MyHomePageState extends State<MyHomePage> {
   // Clears all tiles
   void clear() {
     usedLetters.clear();
-    if (loadedWords) {
-      listOfKeys.forEach((GlobalKey<TileState> key) {
-        key.currentState.setState(() {
-          key.currentState.baseColor = key.currentState.normalColor;
-          key.currentState.notSelected = true;
-        });
+    listOfKeys.forEach((GlobalKey<TileState> key) {
+      key.currentState.setState(() {
+        key.currentState.baseColor = key.currentState.normalColor;
+        key.currentState.notSelected = true;
       });
-    }
+    });
   }
 
   void winnerWinner() async {
@@ -227,6 +215,9 @@ class MyHomePageState extends State<MyHomePage> {
 
   @override
   Widget build(BuildContext context) {
+    listOfKeys =
+        List<GlobalKey<TileState>>.generate(widget.rowSize * widget.rowSize, (int i) => GlobalKey<TileState>());
+
     final MediaQueryData mqData = MediaQuery.of(context);
     const double gridMargin = 20;
     // Scales the grid to fit the screen
@@ -259,7 +250,6 @@ class MyHomePageState extends State<MyHomePage> {
                   future: rootBundle.loadString("assets/words.txt"),
                   builder: (BuildContext context, AsyncSnapshot<dynamic> wordsSnapshot) {
                     if (!wordsSnapshot.hasData) return Container();
-                    loadedWords = true;
                     final List<String> words = getWords(wordsSnapshot.data.toString().replaceAll("\r", "").split("\n"));
                     final List<Char> grid = generateGrid(words, widget.rowSize);
                     return GridView.count(
@@ -277,25 +267,28 @@ class MyHomePageState extends State<MyHomePage> {
                             if (!notSelected) {
                               usedLetters.add(char.id);
                               usedLetters.sort();
-                              final int correctWordsLen = correctWords.length;
-                              if (hasWon()) {
-                                winnerWinner();
-                                clear();
-                              } else {
-                                // If word was correct but not all words selected
-                                if (correctWordsLen != correctWords.length) {
-                                  for (final int pos in usedLetters) {
-                                    final GlobalKey<TileState> key = listOfKeys[pos];
-                                    key.currentState.setState(() {
-                                      key.currentState.setCorrect(true);
-                                    });
-                                  }
-                                  clear();
-                                }
-                                if (usedLetters.length >= widget.rowSize) clear();
-                              }
                             } else {
                               usedLetters.remove(char.id);
+                            }
+                            dev.log(words.toString());
+                            dev.log(correctWords.toString());
+                            dev.log(usedLetters.toString());
+                            final int correctWordsLen = correctWords.length;
+                            if (hasWon()) {
+                              winnerWinner();
+                              clear();
+                            } else {
+                              // If word was correct but not all words selected
+                              if (correctWordsLen != correctWords.length) {
+                                for (final int pos in usedLetters) {
+                                  final GlobalKey<TileState> key = listOfKeys[pos];
+                                  key.currentState.setState(() {
+                                    key.currentState.setCorrect(true);
+                                  });
+                                }
+                                clear();
+                              }
+                              if (usedLetters.length >= widget.rowSize) clear();
                             }
                           },
                         ),
