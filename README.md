@@ -21,10 +21,7 @@ The new and improved version of old word search.
       
 - Database
       Firebase - Real time database
-      
-- JSON
-      assets/words.json - List of all words
-      
+     
 - Git Branches
 
     Branch names should use snake_case.
