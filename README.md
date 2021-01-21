@@ -19,6 +19,12 @@ The new and improved version of old word search.
 - Android studio 4.1.1
       Android Emulator - Pixel_3a_API_30_x86
       
+- Database
+      Firebase - Real time database
+      
+- JSON
+      assets/words.json - List of all words
+      
 - Git Branches
 
     Branch names should use snake_case.
@@ -46,5 +52,14 @@ Everything that isn't featured above, you can find on this website => https://da
 ### Programing language standard
 - We will be using Dart as our main programming language.
   - For Dart, we will be using the framework Flutter.
+  
+ 
+### Database
+- We are storing total amount:
+      Clicks
+      Wins
+      Losses
+      Games played
+
 
 
