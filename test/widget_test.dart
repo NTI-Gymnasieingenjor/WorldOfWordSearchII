@@ -1,51 +1,72 @@
-import "package:flutter/material.dart";
 import "package:flutter_test/flutter_test.dart";
 import "package:WorldOfWordSearchII/main.dart";
+import "dart:developer" as dev;
 
+// A firebase database warning is expected but the tests still work
 void main() {
-  testWidgets("When button pressed change color", (WidgetTester tester) async {
-    // ASSEMBLE
-    await tester.pumpWidget(MyApp());
-    final MyHomePageState pageState = tester.state(find.byType(MyHomePage));
-    if (!pageState.loadedWords) return;
-    final Finder firstButton = find.byType(Tile).first;
-    final TileState state = tester.state(firstButton);
-    print(state.baseColor);
+  testWidgets("Tests clicking correct letters in a word", (WidgetTester tester) async {
+    await tester.runAsync(() async {
+      await tester.pumpWidget(MyApp());
+      await tester.pumpAndSettle();
+      final MyHomePageState pageState = tester.state(find.byType(MyHomePage));
+      await tester.pumpAndSettle();
+      await tester.pump();
 
-    // ACT
-    await tester.tap(firstButton);
-    await tester.pump();
-
-    //ASSERT
-    final Color baseColor = state.baseColor;
-    final Color colorClicked = state.colorClicked;
-    expect(baseColor, colorClicked);
+      final Finder tiles = find.byType(Tile);
+      final int wordsLength = pageState.correctWords.length;
+      for (final String id in pageState.correctWords[0].split(",")) {
+        await tester.tap(tiles.at(int.parse(id)));
+        await tester.pumpAndSettle();
+      }
+      await tester.pumpAndSettle();
+      await tester.pump();
+      expect(wordsLength - 1, pageState.correctWords.length);
+    });
   });
 
-  testWidgets("Test: usedWords is cleared", (WidgetTester tester) async {
-    await tester.pumpWidget(MyApp());
-    final MyHomePageState pageState = tester.state(find.byType(MyHomePage));
+  testWidgets("Tests clicking incorrect letters in a word", (WidgetTester tester) async {
+    await tester.runAsync(() async {
+      await tester.pumpWidget(MyApp());
+      await tester.pumpAndSettle();
+      final MyHomePageState pageState = tester.state(find.byType(MyHomePage));
+      await tester.pumpAndSettle();
+      await tester.pump();
 
-    pageState.clear();
-    print(pageState.usedLetters);
-    expect(pageState.usedLetters.length, 0);
+      final Finder tiles = find.byType(Tile);
+      final int wordsLength = pageState.correctWords.length;
+      final List<String> firstWord = pageState.correctWords.first.split(",");
+      // Clicks all tiles except for the last one
+      for (final String id in firstWord.getRange(0, firstWord.length - 2)) {
+        await tester.tap(tiles.at(int.parse(id)));
+        await tester.pumpAndSettle();
+      }
+      await tester.pumpAndSettle();
+      await tester.pump();
+      expect(wordsLength, pageState.correctWords.length);
+    });
   });
 
-  testWidgets("description", (WidgetTester tester) async {
-    await tester.pumpWidget(MyApp());
-    final MyHomePageState pageState = tester.state(find.byType(MyHomePage));
-    if (!pageState.loadedWords) return;
-    final Finder jTile = find.text("J");
-    final Finder uTile = find.text("U");
-    final Finder lTile = find.text("L");
+  testWidgets("Tests completing the puzzle", (WidgetTester tester) async {
+    await tester.runAsync(() async {
+      await tester.pumpWidget(MyApp());
+      await tester.pumpAndSettle();
+      final MyHomePageState pageState = tester.state(find.byType(MyHomePage));
+      await tester.pumpAndSettle();
+      await tester.pump();
 
-    await tester.tap(jTile);
-    await tester.pump();
-    await tester.tap(uTile);
-    await tester.pump();
-    await tester.tap(lTile);
-    await tester.pump();
-
-    expect(pageState.finishDialogOpen, true);
+      final Finder tiles = find.byType(Tile);
+      for (final String word in pageState.correctWords) {
+        for (final String id in word.split(",")) {
+          await tester.tap(tiles.at(int.parse(id)));
+          await tester.pumpAndSettle();
+        }
+        await tester.pumpAndSettle();
+        await tester.pump();
+      }
+      await tester.pumpAndSettle();
+      await tester.pump();
+      expect(pageState.correctWords.length, 0);
+      expect(pageState.finishDialogOpen, true);
+    });
   });
 }
