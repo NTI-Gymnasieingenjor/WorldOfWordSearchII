@@ -1,1 +1,1 @@
-assets/words.txt eol=lf
+*.txt text eol=lf
