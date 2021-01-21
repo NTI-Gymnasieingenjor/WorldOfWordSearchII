@@ -1,4 +1,5 @@
 import "dart:developer" as dev;
+import 'dart:math';
 import "package:firebase_database/firebase_database.dart";
 import "package:flutter/cupertino.dart";
 import "package:flutter/material.dart";
@@ -117,6 +118,14 @@ class MyHomePageState extends State<MyHomePage> {
             break;
           }
         }
+      }
+    }
+
+    Random rng = Random();
+
+    for (int i = 0; i < wordStack.last.grid.length; i++) {
+      if (wordStack.last.grid[i] == null) {
+        wordStack.last.grid[i] = new Char(i, String.fromCharCode(rng.nextInt(26) + 65));
       }
     }
 
