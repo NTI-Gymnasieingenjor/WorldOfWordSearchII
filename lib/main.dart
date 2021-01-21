@@ -125,7 +125,7 @@ class MyHomePageState extends State<MyHomePage> {
 
     for (int i = 0; i < wordStack.last.grid.length; i++) {
       if (wordStack.last.grid[i] == null) {
-        wordStack.last.grid[i] = new Char(i, String.fromCharCode(rng.nextInt(26) + 65));
+        wordStack.last.grid[i] = Char(i, String.fromCharCode(rng.nextInt(26) + 65));
       }
     }
 
@@ -210,6 +210,13 @@ class MyHomePageState extends State<MyHomePage> {
   // Removes one word from the list if the user has selected the word
   bool hasWon() => (correctWords = correctWords.where((String e) => usedLetters.join(",") != e).toList()).isEmpty;
 
+  List<String> getWords(List<String> words) {
+    final List<String> compatibleWords =
+        words.where((String w) => w.length >= 2 && w.length <= widget.rowSize && w != "step").toList();
+    compatibleWords.shuffle();
+    return compatibleWords.getRange(0, widget.numberOfWords).toList();
+  }
+
   @override
   Widget build(BuildContext context) {
     final MediaQueryData mqData = MediaQuery.of(context);
@@ -245,15 +252,8 @@ class MyHomePageState extends State<MyHomePage> {
                   builder: (BuildContext context, AsyncSnapshot<dynamic> wordsSnapshot) {
                     if (!wordsSnapshot.hasData) return Container();
                     loadedWords = true;
-
-                    final List<String> data = (wordsSnapshot.data as String).split("\r\n");
-                    final List<String> compatibleWords =
-                        data.where((String w) => w.length >= 2 && w.length <= widget.rowSize && w != "step").toList();
-                    compatibleWords.shuffle();
-                    final List<String> words = compatibleWords.getRange(0, widget.numberOfWords).toList();
-                    dev.log(words.toString());
+                    final List<String> words = getWords(wordsSnapshot.data.toString().replaceAll("\r", "").split("\n"));
                     final List<Char> grid = generateGrid(words, widget.rowSize);
-
                     return GridView.count(
                       childAspectRatio: 1,
                       physics: const NeverScrollableScrollPhysics(),
