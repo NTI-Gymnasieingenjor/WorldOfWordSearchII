@@ -17,7 +17,7 @@ class MyApp extends StatelessWidget {
       title: "Flutter Demo",
       home: MyHomePage(
         rowSize: 7,
-        numberOfWords: 5,
+        numberOfWords: 2,
       ),
     );
   }
@@ -147,7 +147,7 @@ class MyHomePageState extends State<MyHomePage> {
 
   void winnerWinner() async {
     // TODO(EVERYONE): REGENERATE!
-    final DatabaseReference winsRef = FirebaseDatabase.instance.reference().child("AmountOfWins");
+    final DatabaseReference winsRef = FirebaseDatabase.instance.reference().child("AmountOfGames");
     winsRef.once().then((DataSnapshot value) => winsRef.set((int.parse(value.value.toString()) ?? 0) + 1));
     await showDialog<AlertDialog>(
       context: context,
@@ -205,6 +205,14 @@ class MyHomePageState extends State<MyHomePage> {
         );
       },
     );
+    setState(() {
+      clear();
+      listOfKeys.forEach((GlobalKey<TileState> key) {
+        key.currentState.setState(() {
+          key.currentState.setCorrect(false);
+        });
+      });
+    });
   }
 
   // Removes one word from the list if the user has selected the word
@@ -274,27 +282,18 @@ class MyHomePageState extends State<MyHomePage> {
                                 winnerWinner();
                                 clear();
                               } else {
-                                final DatabaseReference lossesRef =
-                                    FirebaseDatabase.instance.reference().child("AmountOfLosses");
-                                lossesRef.once().then((DataSnapshot value) =>
-                                    lossesRef.set((int.parse(value.value.toString()) ?? 0) + 1));
-
                                 // If word was correct but not all words selected
                                 if (correctWordsLen != correctWords.length) {
                                   for (final int pos in usedLetters) {
                                     final GlobalKey<TileState> key = listOfKeys[pos];
                                     key.currentState.setState(() {
-                                      key.currentState.setCorrect();
+                                      key.currentState.setCorrect(true);
                                     });
                                   }
                                   clear();
                                 }
                                 if (usedLetters.length >= widget.rowSize) clear();
                               }
-                              final DatabaseReference gamesRef =
-                                  FirebaseDatabase.instance.reference().child("AmountOfGames");
-                              gamesRef.once().then(
-                                  (DataSnapshot value) => gamesRef.set((int.parse(value.value.toString()) ?? 0) + 1));
                             } else {
                               usedLetters.remove(char.id);
                             }
@@ -328,8 +327,12 @@ class TileState extends State<Tile> {
   Color normalColor = Colors.yellow;
   Color baseColor = Colors.yellow;
 
-  void setCorrect() {
-    normalColor = Colors.white;
+  void setCorrect(bool correct) {
+    setState(() {
+      normalColor = correct ? Colors.white : Colors.yellow;
+      baseColor = normalColor;
+      notSelected = true;
+    });
   }
 
   @override
