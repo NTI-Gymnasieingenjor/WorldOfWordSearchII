@@ -281,7 +281,6 @@ class MyHomePageState extends State<MyHomePage> {
 
                                 // If word was correct but not all words selected
                                 if (correctWordsLen != correctWords.length) {
-                                  dev.log(correctWords.length.toString());
                                   for (final int pos in usedLetters) {
                                     final GlobalKey<TileState> key = listOfKeys[pos];
                                     key.currentState.setState(() {

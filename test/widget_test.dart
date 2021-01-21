@@ -2,6 +2,7 @@ import "package:flutter_test/flutter_test.dart";
 import "package:WorldOfWordSearchII/main.dart";
 import "dart:developer" as dev;
 
+// A firebase database warning is expected but the tests still work
 void main() {
   testWidgets("Tests clicking correct letters in a word", (WidgetTester tester) async {
     await tester.runAsync(() async {
@@ -42,6 +43,30 @@ void main() {
       await tester.pumpAndSettle();
       await tester.pump();
       expect(wordsLength, pageState.correctWords.length);
+    });
+  });
+
+  testWidgets("Tests completing the puzzle", (WidgetTester tester) async {
+    await tester.runAsync(() async {
+      await tester.pumpWidget(MyApp());
+      await tester.pumpAndSettle();
+      final MyHomePageState pageState = tester.state(find.byType(MyHomePage));
+      await tester.pumpAndSettle();
+      await tester.pump();
+
+      final Finder tiles = find.byType(Tile);
+      for (final String word in pageState.correctWords) {
+        for (final String id in word.split(",")) {
+          await tester.tap(tiles.at(int.parse(id)));
+          await tester.pumpAndSettle();
+        }
+        await tester.pumpAndSettle();
+        await tester.pump();
+      }
+      await tester.pumpAndSettle();
+      await tester.pump();
+      expect(pageState.correctWords.length, 0);
+      expect(pageState.finishDialogOpen, true);
     });
   });
 }
