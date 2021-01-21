@@ -56,10 +56,5 @@ Everything that isn't featured above, you can find on this website => https://da
  
 ### Database
 - We are storing total amount:
-      Clicks
-      Wins
-      Losses
-      Games played
-
-
-
+  - Clicks
+  - Games played
