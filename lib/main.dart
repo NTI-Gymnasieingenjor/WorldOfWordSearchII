@@ -129,7 +129,7 @@ class MyHomePageState extends State<MyHomePage> {
     usedLetters.clear();
     listOfKeys.forEach((GlobalKey<TileState> key) {
       key.currentState.setState(() {
-        key.currentState.baseColor = key.currentState.normalColor;
+        key.currentState.tileColor = key.currentState.normalColor;
         key.currentState.notSelected = true;
       });
     });
@@ -331,35 +331,38 @@ class Tile extends StatefulWidget {
 }
 
 class TileState extends State<Tile> {
+  static const Color colorClicked = Color(0xff98fb98);
+  static const Color baseColor = Colors.yellow;
+  static const Color selectedBaseColor = Colors.white;
+
   bool notSelected = true;
-  final Color colorClicked = const Color(0xff98fb98);
   Color normalColor = Colors.yellow;
-  Color baseColor = Colors.yellow;
+  Color tileColor = Colors.yellow;
 
   void setCorrect(bool correct) {
     setState(() {
-      normalColor = correct ? Colors.white : Colors.yellow;
-      baseColor = normalColor;
+      normalColor = correct ? selectedBaseColor : baseColor;
+      tileColor = normalColor;
       notSelected = true;
     });
   }
 
   @override
   Widget build(BuildContext context) {
-    baseColor = notSelected ? normalColor : colorClicked;
+    tileColor = notSelected ? normalColor : colorClicked;
     return GestureDetector(
       onTap: () {
         notSelected = !notSelected;
         setState(() {
           final DatabaseReference clicksRef = FirebaseDatabase.instance.reference().child("AmountOfClicks");
           clicksRef.once().then((DataSnapshot value) => clicksRef.set((int.parse(value.value.toString()) ?? 0) + 1));
-          baseColor = notSelected ? normalColor : colorClicked;
+          tileColor = notSelected ? normalColor : colorClicked;
           widget.onClick(widget.char, notSelected);
         });
       },
       child: Container(
         margin: const EdgeInsets.all(4),
-        color: baseColor,
+        color: tileColor,
         child: Center(
           child: Text(
             widget.char.char.toUpperCase(),
