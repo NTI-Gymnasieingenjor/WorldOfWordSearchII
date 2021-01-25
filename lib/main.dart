@@ -209,8 +209,7 @@ class MyHomePageState extends State<MyHomePage> {
   bool hasWon() => (correctWords = correctWords.where((String e) => usedLetters.join(",") != e).toList()).isEmpty;
 
   List<String> getWords(List<String> words) {
-    final List<String> compatibleWords =
-        words.where((String w) => w.length >= 2 && w.length <= widget.rowSize && w != "step").toList();
+    final List<String> compatibleWords = words.where((String w) => w.length <= widget.rowSize).toList();
     compatibleWords.shuffle();
     return compatibleWords.getRange(0, widget.numberOfWords).toList();
   }
