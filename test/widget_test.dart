@@ -1,3 +1,7 @@
+import 'dart:ui';
+
+import 'package:flutter/material.dart';
+import 'package:flutter/src/widgets/binding.dart';
 import "package:flutter_test/flutter_test.dart";
 import "package:WorldOfWordSearchII/main.dart";
 import "dart:developer" as dev;
@@ -67,6 +71,29 @@ void main() {
       await tester.pump();
       expect(pageState.correctWords.length, 0);
       expect(pageState.finishDialogOpen, true);
+    });
+  });
+
+  testWidgets("Tests clicking correct letters in a word and rotating display", (WidgetTester tester) async {
+    await tester.runAsync(() async {
+      await tester.pumpWidget(MyApp());
+      await tester.pumpAndSettle();
+      final MyHomePageState pageState = tester.state(find.byType(MyHomePage));
+      await tester.pumpAndSettle();
+      await tester.pump();
+
+      final Finder tile = find.byType(Tile).at(0);
+      await tester.tap(tile);
+      await tester.pumpAndSettle();
+      await tester.pump();
+
+      // Resets state to simulate rotation
+      pageState.setState(() {});
+      await tester.pumpWidget(MyApp());
+      await tester.pumpAndSettle();
+
+      final TileState tileState = tester.state(tile);
+      expect(tileState.notSelected, false);
     });
   });
 }
