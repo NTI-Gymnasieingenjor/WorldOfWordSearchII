@@ -37,6 +37,8 @@ class MyHomePageState extends State<MyHomePage> {
   List<String> correctWords = <String>[];
   bool finishDialogOpen = false;
   Random rand = Random();
+  List<String> words;
+  List<Char> grid;
 
   List<GlobalKey<TileState>> listOfKeys;
 
@@ -179,7 +181,6 @@ class MyHomePageState extends State<MyHomePage> {
                             child: const Text("Restart", style: TextStyle(color: Colors.black)),
                             onPressed: () {
                               Navigator.pop(context);
-                              finishDialogOpen = false;
                             },
                           ),
                         ),
@@ -194,6 +195,7 @@ class MyHomePageState extends State<MyHomePage> {
       },
     );
     setState(() {
+      finishDialogOpen = false;
       clear();
       listOfKeys.forEach((GlobalKey<TileState> key) {
         key.currentState.setState(() {
@@ -213,11 +215,10 @@ class MyHomePageState extends State<MyHomePage> {
     return compatibleWords.getRange(0, widget.numberOfWords).toList();
   }
 
+  List<Tile> tiles;
+
   @override
   Widget build(BuildContext context) {
-    listOfKeys =
-        List<GlobalKey<TileState>>.generate(widget.rowSize * widget.rowSize, (int i) => GlobalKey<TileState>());
-
     final MediaQueryData mqData = MediaQuery.of(context);
     const double gridMargin = 20;
     // Scales the grid to fit the screen
@@ -250,15 +251,12 @@ class MyHomePageState extends State<MyHomePage> {
                   future: rootBundle.loadString("assets/words.txt"),
                   builder: (BuildContext context, AsyncSnapshot<dynamic> wordsSnapshot) {
                     if (!wordsSnapshot.hasData) return Container();
-                    final List<String> words = getWords(wordsSnapshot.data.toString().replaceAll("\r", "").split("\n"));
-                    final List<Char> grid = generateGrid(words, widget.rowSize);
-                    return GridView.count(
-                      childAspectRatio: 1,
-                      physics: const NeverScrollableScrollPhysics(),
-                      shrinkWrap: true,
-                      padding: const EdgeInsets.all(2),
-                      crossAxisCount: widget.rowSize,
-                      children: List<Widget>.generate(
+                    if (correctWords.isEmpty && !finishDialogOpen) {
+                      words = getWords(wordsSnapshot.data.toString().replaceAll("\r", "").split("\n"));
+                      grid = generateGrid(words, widget.rowSize);
+                      listOfKeys = List<GlobalKey<TileState>>.generate(
+                          widget.rowSize * widget.rowSize, (int i) => GlobalKey<TileState>());
+                      tiles = List<Tile>.generate(
                         widget.rowSize * widget.rowSize,
                         (int index) => Tile(
                           key: listOfKeys[index],
@@ -274,7 +272,14 @@ class MyHomePageState extends State<MyHomePage> {
                             dev.log(correctWords.toString());
                             dev.log(usedLetters.toString());
                             final int correctWordsLen = correctWords.length;
+                            final List<int> usedLettersOld = List<int>.from(usedLetters);
                             if (hasWon()) {
+                              for (final int pos in usedLettersOld) {
+                                final GlobalKey<TileState> key = listOfKeys[pos];
+                                key.currentState.setState(() {
+                                  key.currentState.setCorrect(true);
+                                });
+                              }
                               winnerWinner();
                               clear();
                             } else {
@@ -292,6 +297,17 @@ class MyHomePageState extends State<MyHomePage> {
                             }
                           },
                         ),
+                      );
+                    }
+                    return GridView.count(
+                      childAspectRatio: 1,
+                      physics: const NeverScrollableScrollPhysics(),
+                      shrinkWrap: true,
+                      padding: const EdgeInsets.all(2),
+                      crossAxisCount: widget.rowSize,
+                      children: List<Widget>.generate(
+                        widget.rowSize * widget.rowSize,
+                        (int index) => tiles[index],
                       ),
                     );
                   },
@@ -330,6 +346,7 @@ class TileState extends State<Tile> {
 
   @override
   Widget build(BuildContext context) {
+    baseColor = notSelected ? normalColor : colorClicked;
     return GestureDetector(
       onTap: () {
         notSelected = !notSelected;
