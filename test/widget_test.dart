@@ -1,3 +1,7 @@
+import "package:firebase_core/firebase_core.dart";
+import 'package:firebase_database/firebase_database.dart';
+import "package:flutter/cupertino.dart";
+import "package:flutter/material.dart";
 import "package:flutter_test/flutter_test.dart";
 import "package:WorldOfWordSearchII/main.dart";
 
@@ -66,6 +70,56 @@ void main() {
       await tester.pump();
       expect(pageState.correctWords.length, 0);
       expect(pageState.finishDialogOpen, true);
+    });
+  });
+
+  testWidgets("Check grid change after restart", (WidgetTester tester) async {
+    await tester.runAsync(() async {
+      await tester.pumpWidget(MyApp());
+      await tester.pumpAndSettle();
+      final MyHomePageState pageState = tester.state(find.byType(MyHomePage));
+      await tester.pumpAndSettle();
+
+      final List<Char> initGrid = pageState.grid;
+      pageState.correctWords.clear();
+      await tester.pumpAndSettle();
+
+      final Finder tiles = find.byType(Tile);
+      await tester.tap(tiles.at(0));
+      await tester.pumpAndSettle();
+      expect(pageState.correctWords.length, 0);
+      expect(pageState.finishDialogOpen, true);
+
+      await tester.tap(find.byType(CupertinoButton));
+      await tester.pumpAndSettle();
+      expect(pageState.finishDialogOpen, false);
+      expect(initGrid == pageState.grid, false);
+    });
+  });
+
+  testWidgets("Check tiles aren't selected after restart", (WidgetTester tester) async {
+    await tester.runAsync(() async {
+      await tester.pumpWidget(MyApp());
+      await tester.pumpAndSettle();
+      final MyHomePageState pageState = tester.state(find.byType(MyHomePage));
+      await tester.pumpAndSettle();
+
+      pageState.correctWords.clear();
+      await tester.pumpAndSettle();
+
+      // Click the first tile to show the win dialog
+      await tester.tap(find.byType(Tile).at(0));
+      await tester.pumpAndSettle();
+      // Click the restart button
+      await tester.tap(find.byType(CupertinoButton));
+      await tester.pumpAndSettle();
+
+      expect(pageState.usedLetters.isEmpty, true);
+      for (final GlobalKey<TileState> key in pageState.listOfKeys) {
+        final TileState state = key.currentState;
+        expect(state.tileColor, TileState.baseColor);
+        expect(state.notSelected, true);
+      }
     });
   });
 }
