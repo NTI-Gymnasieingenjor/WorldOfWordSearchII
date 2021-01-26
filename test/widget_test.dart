@@ -1,8 +1,10 @@
-import "dart:developer" as dev;
 import "package:flutter/cupertino.dart";
 import "package:flutter/material.dart";
 import "package:flutter_test/flutter_test.dart";
 import "package:WorldOfWordSearchII/main.dart";
+import "package:WorldOfWordSearchII/game.dart";
+import "package:WorldOfWordSearchII/tile.dart";
+import "package:WorldOfWordSearchII/stopwatch_widget.dart";
 
 // A firebase database warning is expected but the tests still work
 void main() {
@@ -10,7 +12,7 @@ void main() {
     await tester.runAsync(() async {
       await tester.pumpWidget(MyApp());
       await tester.pumpAndSettle();
-      final MyHomePageState pageState = tester.state(find.byType(MyHomePage));
+      final GameState pageState = tester.state(find.byType(Game));
       await tester.pumpAndSettle();
 
       final Finder tiles = find.byType(Tile);
@@ -28,7 +30,7 @@ void main() {
     await tester.runAsync(() async {
       await tester.pumpWidget(MyApp());
       await tester.pumpAndSettle();
-      final MyHomePageState pageState = tester.state(find.byType(MyHomePage));
+      final GameState pageState = tester.state(find.byType(Game));
       await tester.pumpAndSettle();
 
       final Finder tiles = find.byType(Tile);
@@ -48,7 +50,7 @@ void main() {
     await tester.runAsync(() async {
       await tester.pumpWidget(MyApp());
       await tester.pumpAndSettle();
-      final MyHomePageState pageState = tester.state(find.byType(MyHomePage));
+      final GameState pageState = tester.state(find.byType(Game));
       await tester.pumpAndSettle();
 
       final Finder tiles = find.byType(Tile);
@@ -69,7 +71,7 @@ void main() {
     await tester.runAsync(() async {
       await tester.pumpWidget(MyApp());
       await tester.pumpAndSettle();
-      final MyHomePageState pageState = tester.state(find.byType(MyHomePage));
+      final GameState pageState = tester.state(find.byType(Game));
       await tester.pumpAndSettle();
 
       final List<Char> initGrid = pageState.grid;
@@ -93,7 +95,7 @@ void main() {
     await tester.runAsync(() async {
       await tester.pumpWidget(MyApp());
       await tester.pumpAndSettle();
-      final MyHomePageState pageState = tester.state(find.byType(MyHomePage));
+      final GameState pageState = tester.state(find.byType(Game));
       await tester.pumpAndSettle();
 
       pageState.correctWords.clear();
@@ -132,7 +134,7 @@ void main() {
     await tester.runAsync(() async {
       await tester.pumpWidget(MyApp());
       await tester.pumpAndSettle();
-      final MyHomePageState pageState = tester.state(find.byType(MyHomePage));
+      final GameState pageState = tester.state(find.byType(Game));
       final StopWatchWidgetState stopWatchWidget = tester.state(find.byType(StopWatchWidget));
 
       await Future<dynamic>.delayed(const Duration(seconds: 2));

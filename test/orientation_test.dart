@@ -1,14 +1,17 @@
-import 'package:flutter/cupertino.dart';
+import "package:WorldOfWordSearchII/stopwatch_widget.dart";
 import "package:flutter_test/flutter_test.dart";
+
 import "package:WorldOfWordSearchII/main.dart";
+import "package:WorldOfWordSearchII/game.dart";
+import "package:WorldOfWordSearchII/tile.dart";
 
 // A firebase database warning is expected but the tests still work
 void main() {
-  testWidgets("Tests clicking correct letters in a word and rotating display", (WidgetTester tester) async {
+  testWidgets("Tests clicking correct letter in a word and rotating display", (WidgetTester tester) async {
     await tester.runAsync(() async {
       await tester.pumpWidget(MyApp());
       await tester.pumpAndSettle();
-      final MyHomePageState pageState = tester.state(find.byType(MyHomePage));
+      final GameState pageState = tester.state(find.byType(Game));
       await tester.pumpAndSettle();
       await tester.pump();
 
@@ -31,7 +34,7 @@ void main() {
     await tester.runAsync(() async {
       await tester.pumpWidget(MyApp());
       await tester.pumpAndSettle();
-      final MyHomePageState pageState = tester.state(find.byType(MyHomePage));
+      final GameState pageState = tester.state(find.byType(Game));
       final List<Char> grid = pageState.grid;
 
       // Resets state to simulate rotation
@@ -47,7 +50,7 @@ void main() {
     await tester.runAsync(() async {
       await tester.pumpWidget(MyApp());
       await tester.pumpAndSettle();
-      final MyHomePageState pageState = tester.state(find.byType(MyHomePage));
+      final GameState pageState = tester.state(find.byType(Game));
       final Finder tiles = find.byType(Tile);
       final int wordsLength = pageState.correctWords.length;
       final List<String> firstWord = pageState.correctWords.first.split(",");
@@ -73,7 +76,7 @@ void main() {
     await tester.runAsync(() async {
       await tester.pumpWidget(MyApp());
       await tester.pumpAndSettle();
-      final MyHomePageState pageState = tester.state(find.byType(MyHomePage));
+      final GameState pageState = tester.state(find.byType(Game));
       final StopWatchWidgetState stopWatchWidget = tester.state(find.byType(StopWatchWidget));
 
       stopWatchWidget.widget.stop();
