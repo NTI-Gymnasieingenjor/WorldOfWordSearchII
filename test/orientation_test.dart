@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart';
 import "package:flutter_test/flutter_test.dart";
 import "package:WorldOfWordSearchII/main.dart";
 
@@ -65,6 +66,26 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(wordsLength, pageState.correctWords.length);
+    });
+  });
+
+  testWidgets("Check stopwatch value doesn't reset on rotate", (WidgetTester tester) async {
+    await tester.runAsync(() async {
+      await tester.pumpWidget(MyApp());
+      await tester.pumpAndSettle();
+      final MyHomePageState pageState = tester.state(find.byType(MyHomePage));
+      final StopWatchWidgetState stopWatchWidget = tester.state(find.byType(StopWatchWidget));
+
+      stopWatchWidget.widget.stop();
+      await Future<dynamic>.delayed(const Duration(seconds: 2));
+      final String firstTime = stopWatchWidget.widget.formatTime();
+
+      // Resets state to simulate rotation
+      pageState.setState(() {});
+      await tester.pumpWidget(MyApp());
+      await tester.pumpAndSettle();
+
+      expect(firstTime, stopWatchWidget.widget.formatTime());
     });
   });
 }
