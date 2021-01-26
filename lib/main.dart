@@ -206,7 +206,6 @@ class MyHomePageState extends State<MyHomePage> {
         });
       });
     });
-    stopWatchWidget.reset();
   }
 
   // Removes one word from the list if the user has selected the word
@@ -299,11 +298,8 @@ class MyHomePageState extends State<MyHomePage> {
                       ),
                     );
                     stopWatchWidget = StopWatchWidget(timerHeight: timerHeight);
-                    WidgetsBinding.instance.addPostFrameCallback((_) {
-                      setState(() {
-                        stopWatchWidget.start();
-                      });
-                    });
+                    stopWatchWidget.reset();
+                    stopWatchWidget.start();
                   }
                   return Column(
                     crossAxisAlignment: CrossAxisAlignment.center,

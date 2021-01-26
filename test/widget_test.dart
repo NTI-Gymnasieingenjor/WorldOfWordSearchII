@@ -1,5 +1,4 @@
-import "package:firebase_core/firebase_core.dart";
-import 'package:firebase_database/firebase_database.dart';
+import "dart:developer" as dev;
 import "package:flutter/cupertino.dart";
 import "package:flutter/material.dart";
 import "package:flutter_test/flutter_test.dart";
@@ -13,7 +12,6 @@ void main() {
       await tester.pumpAndSettle();
       final MyHomePageState pageState = tester.state(find.byType(MyHomePage));
       await tester.pumpAndSettle();
-      await tester.pump();
 
       final Finder tiles = find.byType(Tile);
       final int wordsLength = pageState.correctWords.length;
@@ -22,7 +20,6 @@ void main() {
         await tester.pumpAndSettle();
       }
       await tester.pumpAndSettle();
-      await tester.pump();
       expect(wordsLength - 1, pageState.correctWords.length);
     });
   });
@@ -33,7 +30,6 @@ void main() {
       await tester.pumpAndSettle();
       final MyHomePageState pageState = tester.state(find.byType(MyHomePage));
       await tester.pumpAndSettle();
-      await tester.pump();
 
       final Finder tiles = find.byType(Tile);
       final int wordsLength = pageState.correctWords.length;
@@ -44,7 +40,6 @@ void main() {
         await tester.pumpAndSettle();
       }
       await tester.pumpAndSettle();
-      await tester.pump();
       expect(wordsLength, pageState.correctWords.length);
     });
   });
@@ -55,7 +50,6 @@ void main() {
       await tester.pumpAndSettle();
       final MyHomePageState pageState = tester.state(find.byType(MyHomePage));
       await tester.pumpAndSettle();
-      await tester.pump();
 
       final Finder tiles = find.byType(Tile);
       for (final String word in pageState.correctWords) {
@@ -64,10 +58,8 @@ void main() {
           await tester.pumpAndSettle();
         }
         await tester.pumpAndSettle();
-        await tester.pump();
       }
       await tester.pumpAndSettle();
-      await tester.pump();
       expect(pageState.correctWords.length, 0);
       expect(pageState.finishDialogOpen, true);
     });
@@ -120,6 +112,45 @@ void main() {
         expect(state.tileColor, TileState.baseColor);
         expect(state.notSelected, true);
       }
+    });
+  });
+
+  testWidgets("Check stopwatch increment", (WidgetTester tester) async {
+    await tester.runAsync(() async {
+      await tester.pumpWidget(MyApp());
+      await tester.pumpAndSettle();
+      final StopWatchWidgetState stopWatchWidget = tester.state(find.byType(StopWatchWidget));
+
+      final String firstTime = stopWatchWidget.widget.formatTime();
+      await Future<dynamic>.delayed(const Duration(seconds: 2));
+      expect(firstTime != stopWatchWidget.widget.formatTime(), true);
+      expect(stopWatchWidget.widget.formatTime() != "00:00:00", true);
+    });
+  });
+
+  testWidgets("Check stopwatch restart on game restart", (WidgetTester tester) async {
+    await tester.runAsync(() async {
+      await tester.pumpWidget(MyApp());
+      await tester.pumpAndSettle();
+      final MyHomePageState pageState = tester.state(find.byType(MyHomePage));
+      final StopWatchWidgetState stopWatchWidget = tester.state(find.byType(StopWatchWidget));
+
+      await Future<dynamic>.delayed(const Duration(seconds: 2));
+      final String firstTime = stopWatchWidget.widget.formatTime();
+
+      pageState.correctWords.clear();
+      await tester.pumpAndSettle();
+
+      final Finder tiles = find.byType(Tile);
+      await tester.tap(tiles.at(0));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byType(CupertinoButton));
+      await tester.pumpAndSettle();
+      stopWatchWidget.widget.stop();
+
+      expect(firstTime != stopWatchWidget.widget.formatTime(), true);
+      expect(stopWatchWidget.widget.formatTime() == "00:00:00", true);
     });
   });
 }
