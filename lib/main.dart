@@ -1,3 +1,4 @@
+import 'dart:async';
 import "dart:developer" as dev;
 import "dart:math";
 import "package:firebase_database/firebase_database.dart";
@@ -39,6 +40,8 @@ class MyHomePageState extends State<MyHomePage> {
   Random rand = Random();
   List<String> words;
   List<Char> grid;
+
+  StopWatchWidget stopWatchWidget;
 
   List<GlobalKey<TileState>> listOfKeys;
 
@@ -203,6 +206,7 @@ class MyHomePageState extends State<MyHomePage> {
         });
       });
     });
+    stopWatchWidget.reset();
   }
 
   // Removes one word from the list if the user has selected the word
@@ -220,6 +224,7 @@ class MyHomePageState extends State<MyHomePage> {
   Widget build(BuildContext context) {
     final MediaQueryData mqData = MediaQuery.of(context);
     const double gridMargin = 20;
+    const double timerHeight = 50;
     // Scales the grid to fit the screen
     double gridSize = 200;
     if (mqData.size.height > mqData.size.width) {
@@ -227,7 +232,7 @@ class MyHomePageState extends State<MyHomePage> {
       gridSize = mqData.size.width - gridMargin - horPadding;
     } else {
       final double vertPadding = mqData.padding.top + mqData.padding.bottom;
-      gridSize = mqData.size.height - gridMargin - vertPadding;
+      gridSize = mqData.size.height - gridMargin - vertPadding - timerHeight;
     }
     return Scaffold(
       backgroundColor: Colors.white,
@@ -241,76 +246,90 @@ class MyHomePageState extends State<MyHomePage> {
           ),
           Center(
             child: SafeArea(
-              child: Container(
-                height: gridSize,
-                width: gridSize,
-                margin: const EdgeInsets.all(gridMargin / 2),
-                color: Colors.purple,
-                child: FutureBuilder<dynamic>(
-                  future: rootBundle.loadString("assets/words.txt"),
-                  builder: (BuildContext context, AsyncSnapshot<dynamic> wordsSnapshot) {
-                    if (!wordsSnapshot.hasData) return Container();
-                    if (correctWords.isEmpty && !finishDialogOpen) {
-                      words = getWords(wordsSnapshot.data.toString().replaceAll("\r", "").split("\n"));
-                      grid = generateGrid(words, widget.rowSize);
-                      listOfKeys = List<GlobalKey<TileState>>.generate(
-                          widget.rowSize * widget.rowSize, (int i) => GlobalKey<TileState>());
-                      tiles = List<Tile>.generate(
-                        widget.rowSize * widget.rowSize,
-                        (int index) => Tile(
-                          key: listOfKeys[index],
-                          char: Char(index, grid[index]?.char ?? "_"),
-                          onClick: (Char char, bool notSelected) async {
-                            if (!notSelected) {
-                              usedLetters.add(char.id);
-                              usedLetters.sort();
-                            } else {
-                              usedLetters.remove(char.id);
+              child: FutureBuilder<dynamic>(
+                future: rootBundle.loadString("assets/words.txt"),
+                builder: (BuildContext context, AsyncSnapshot<dynamic> wordsSnapshot) {
+                  if (!wordsSnapshot.hasData) return Container();
+                  if (correctWords.isEmpty && !finishDialogOpen) {
+                    words = getWords(wordsSnapshot.data.toString().replaceAll("\r", "").split("\n"));
+                    grid = generateGrid(words, widget.rowSize);
+                    listOfKeys = List<GlobalKey<TileState>>.generate(
+                        widget.rowSize * widget.rowSize, (int i) => GlobalKey<TileState>());
+                    tiles = List<Tile>.generate(
+                      widget.rowSize * widget.rowSize,
+                      (int index) => Tile(
+                        key: listOfKeys[index],
+                        char: Char(index, grid[index]?.char ?? "_"),
+                        onClick: (Char char, bool notSelected) async {
+                          if (!notSelected) {
+                            usedLetters.add(char.id);
+                            usedLetters.sort();
+                          } else {
+                            usedLetters.remove(char.id);
+                          }
+                          dev.log(words.toString());
+                          dev.log(correctWords.toString());
+                          dev.log(usedLetters.toString());
+                          final int correctWordsLen = correctWords.length;
+                          final List<int> usedLettersOld = List<int>.from(usedLetters);
+                          if (hasWon()) {
+                            for (final int pos in usedLettersOld) {
+                              final GlobalKey<TileState> key = listOfKeys[pos];
+                              key.currentState.setState(() {
+                                key.currentState.setCorrect(true);
+                              });
                             }
-                            dev.log(words.toString());
-                            dev.log(correctWords.toString());
-                            dev.log(usedLetters.toString());
-                            final int correctWordsLen = correctWords.length;
-                            final List<int> usedLettersOld = List<int>.from(usedLetters);
-                            if (hasWon()) {
-                              for (final int pos in usedLettersOld) {
+                            stopWatchWidget.stop();
+                            winnerWinner();
+                            clear();
+                          } else {
+                            // If word was correct but not all words selected
+                            if (correctWordsLen != correctWords.length) {
+                              for (final int pos in usedLetters) {
                                 final GlobalKey<TileState> key = listOfKeys[pos];
                                 key.currentState.setState(() {
                                   key.currentState.setCorrect(true);
                                 });
                               }
-                              winnerWinner();
                               clear();
-                            } else {
-                              // If word was correct but not all words selected
-                              if (correctWordsLen != correctWords.length) {
-                                for (final int pos in usedLetters) {
-                                  final GlobalKey<TileState> key = listOfKeys[pos];
-                                  key.currentState.setState(() {
-                                    key.currentState.setCorrect(true);
-                                  });
-                                }
-                                clear();
-                              }
-                              if (usedLetters.length >= widget.rowSize) clear();
                             }
-                          },
-                        ),
-                      );
-                    }
-                    return GridView.count(
-                      childAspectRatio: 1,
-                      physics: const NeverScrollableScrollPhysics(),
-                      shrinkWrap: true,
-                      padding: const EdgeInsets.all(2),
-                      crossAxisCount: widget.rowSize,
-                      children: List<Widget>.generate(
-                        widget.rowSize * widget.rowSize,
-                        (int index) => tiles[index],
+                            if (usedLetters.length >= widget.rowSize) clear();
+                          }
+                        },
                       ),
                     );
-                  },
-                ),
+                    stopWatchWidget = StopWatchWidget(timerHeight: timerHeight);
+                    WidgetsBinding.instance.addPostFrameCallback((_) {
+                      setState(() {
+                        stopWatchWidget.start();
+                      });
+                    });
+                  }
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: <Widget>[
+                      stopWatchWidget,
+                      Container(
+                        height: gridSize,
+                        width: gridSize,
+                        margin: const EdgeInsets.all(gridMargin / 2),
+                        color: Colors.purple,
+                        child: GridView.count(
+                          childAspectRatio: 1,
+                          physics: const NeverScrollableScrollPhysics(),
+                          shrinkWrap: true,
+                          padding: const EdgeInsets.all(2),
+                          crossAxisCount: widget.rowSize,
+                          children: List<Widget>.generate(
+                            widget.rowSize * widget.rowSize,
+                            (int index) => tiles[index],
+                          ),
+                        ),
+                      ),
+                    ],
+                  );
+                },
               ),
             ),
           ),
@@ -367,6 +386,75 @@ class TileState extends State<Tile> {
             widget.char.char.toUpperCase(),
             style: const TextStyle(color: Colors.pinkAccent, fontSize: 35),
           ),
+        ),
+      ),
+    );
+  }
+}
+
+class StopWatchWidget extends StatefulWidget {
+  StopWatchWidget({Key key, this.timerHeight}) : super(key: key);
+
+  final double timerHeight;
+
+  Stopwatch stopwatch = Stopwatch();
+
+  void stop() {
+    stopwatch.stop();
+  }
+
+  void start() {
+    stopwatch.start();
+  }
+
+  void reset() {
+    stopwatch.reset();
+  }
+
+  String formatTime() {
+    final String hours = stopwatch.elapsed.inHours.toString().padLeft(2, "0");
+    final String mins = stopwatch.elapsed.inMinutes.remainder(60).toString().padLeft(2, "0");
+    final String secs = stopwatch.elapsed.inSeconds.remainder(60).toString().padLeft(2, "0");
+    return "$hours:$mins:$secs";
+  }
+
+  @override
+  StopWatchWidgetState createState() => StopWatchWidgetState();
+}
+
+class StopWatchWidgetState extends State<StopWatchWidget> {
+  Timer _timer;
+
+  @override
+  void initState() {
+    super.initState();
+    _timer = Timer.periodic(const Duration(milliseconds: 500), (Timer timer) => setState(() {}));
+  }
+
+  @override
+  void dispose() {
+    _timer.cancel();
+    widget.stopwatch.reset();
+    widget.stopwatch.stop();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      height: widget.timerHeight,
+      child: Text(
+        widget.formatTime(),
+        style: TextStyle(
+          color: Colors.white,
+          fontSize: widget.timerHeight,
+          shadows: const <Shadow>[
+            Shadow(
+              color: Colors.purple,
+              offset: Offset(3, 5),
+              blurRadius: 8,
+            )
+          ],
         ),
       ),
     );
