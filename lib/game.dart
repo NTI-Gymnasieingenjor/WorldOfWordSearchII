@@ -122,7 +122,7 @@ class GameState extends State<Game> {
     return tempGrid;
   }
 
-  List<Char> generateGrid(List<String> words, int gridSize) {
+  List<Char> generateGrid(List<String> words, int gridSize, List<String> bWords) {
     correctWords.clear();
     usedLetters.clear();
     words.shuffle();
@@ -171,46 +171,40 @@ class GameState extends State<Game> {
         dev.log(wordStack.last.positions.toString() + (wordStack.last.grid.toString()));
       }
     }
-
-    int totalLetters = (wordStack.last.positions.length).toInt();
-    int sizeOfGrid = sqrt(totalLetters).toInt();
+    final int totalLetters = wordStack.last.positions.length;
     int letterY = 0;
     int startLetter = 0;
-    int addingLetter = 0 + letterY * sizeOfGrid;
-    int yVariable = (addingLetter * sizeOfGrid) + letterY * 2;
+    int addingLetter = 0 + letterY * rowSize;
+    int yVariable = (addingLetter * rowSize) + letterY * 2;
     String testWord = "";
     String testWordY = "";
-    String additionLetter = wordStack.last.grid[addingLetter].toString();
-    String additionLetterY = wordStack.last.grid[yVariable].toString();
-    dev.log(sizeOfGrid.toString() + totalLetters.toString());
+    dev.log(rowSize.toString() + totalLetters.toString());
 
     if (wordStack.last.grid[totalLetters - 1] != null) {
       dev.log("All letter are generated");
 
-      for (startLetter = startLetter; startLetter < totalLetters; startLetter++) {
+      while (startLetter < totalLetters) {
+        startLetter++;
         addingLetter = startLetter;
 
-        if (startLetter == sizeOfGrid - 1 + letterY * sizeOfGrid) {
+        if (startLetter == rowSize - 1 + letterY * rowSize) {
           letterY++;
-          addingLetter = 0 + letterY * sizeOfGrid;
-          testWord = "";
+          addingLetter = 0 + letterY * rowSize;
         }
         testWord = "";
         testWordY = "";
 
-        if (letterY == sizeOfGrid) {
+        if (letterY == rowSize) {
           break;
         }
-        for (addingLetter = addingLetter; addingLetter < sizeOfGrid + letterY * sizeOfGrid; addingLetter++) {
-          additionLetter = wordStack.last.grid[addingLetter].toString();
-          testWord = testWord + additionLetter;
+        for (addingLetter = addingLetter; addingLetter < rowSize + letterY * rowSize; addingLetter++) {
+          testWord += wordStack.last.grid[addingLetter].toString();
           dev.log("Word for X:" + testWord.toString());
-          yVariable = (addingLetter * sizeOfGrid) + letterY;
+          yVariable = (addingLetter * rowSize) + letterY;
           if (yVariable >= totalLetters) {
-            yVariable -= (totalLetters * letterY);
+            yVariable -= totalLetters * letterY;
           }
-          additionLetterY = wordStack.last.grid[yVariable].toString();
-          testWordY += additionLetterY;
+          testWordY += wordStack.last.grid[yVariable].toString();
           dev.log("Word for Y:" + testWordY.toString());
           dev.log("_________");
         }
@@ -276,7 +270,7 @@ class GameState extends State<Game> {
     return compatibleWords.getRange(0, wordCount).toList();
   }
 
-  void startGame(AsyncSnapshot<dynamic> wordsSnapshot) {
+  void startGame(AsyncSnapshot<dynamic> wordsSnapshot, AsyncSnapshot<dynamic> bWordsSnapshot) {
     if (correctWords.isEmpty && !finishDialogOpen) {
       final int max = Game.difficulties[currentDifficulty].rowSizeMax;
       final int min = Game.difficulties[currentDifficulty].rowSizeMin;
@@ -284,8 +278,10 @@ class GameState extends State<Game> {
       wordCount = rand.nextInt(rowSize - (rowSize / 2).ceil()) + (rowSize / 2).ceil();
       dev.log(wordCount.toString());
 
+      List<String> bWords = bWordsSnapshot.data.toString().replaceAll("\r", "").split("\n");
+
       words = getWords(wordsSnapshot.data.toString().replaceAll("\r", "").split("\n"));
-      grid = generateGrid(words, rowSize);
+      grid = generateGrid(words, rowSize, bWords);
       listOfKeys = List<GlobalKey<TileState>>.generate(rowSize * rowSize, (int i) => GlobalKey<TileState>());
       tiles = List<Tile>.generate(
         rowSize * rowSize,
@@ -327,59 +323,64 @@ class GameState extends State<Game> {
           Center(
             child: SafeArea(
               child: FutureBuilder<dynamic>(
-                future: rootBundle.loadString("assets/words.txt"),
-                builder: (BuildContext context, AsyncSnapshot<dynamic> wordsSnapshot) {
-                  if (!wordsSnapshot.hasData) return Container();
-                  startGame(wordsSnapshot);
-                  return Column(
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: <Widget>[
-                      SizedBox(
-                        height: timerHeight,
-                        child: Column(
+                  future: rootBundle.loadString("assets/bwords.txt"),
+                  builder: (BuildContext context, AsyncSnapshot<dynamic> bWordsSnapshot) {
+                    if (!bWordsSnapshot.hasData) return Container();
+                    return FutureBuilder<dynamic>(
+                      future: rootBundle.loadString("assets/words.txt"),
+                      builder: (BuildContext context, AsyncSnapshot<dynamic> wordsSnapshot) {
+                        if (!wordsSnapshot.hasData) return Container();
+                        startGame(wordsSnapshot, bWordsSnapshot);
+                        return Column(
                           crossAxisAlignment: CrossAxisAlignment.center,
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: <Widget>[
-                            stopWatchWidget,
-                            Text(
-                              Game.difficulties[currentDifficulty].name,
-                              style: const TextStyle(
-                                fontSize: timerHeight / 2 - 5,
-                                color: Colors.white,
-                                shadows: <Shadow>[
-                                  Shadow(
-                                    color: Colors.black,
-                                    offset: Offset(3, 5),
-                                    blurRadius: 8,
-                                  )
+                            SizedBox(
+                              height: timerHeight,
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.center,
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: <Widget>[
+                                  stopWatchWidget,
+                                  Text(
+                                    Game.difficulties[currentDifficulty].name,
+                                    style: const TextStyle(
+                                      fontSize: timerHeight / 2 - 5,
+                                      color: Colors.white,
+                                      shadows: <Shadow>[
+                                        Shadow(
+                                          color: Colors.black,
+                                          offset: Offset(3, 5),
+                                          blurRadius: 8,
+                                        )
+                                      ],
+                                    ),
+                                  ),
                                 ],
                               ),
                             ),
+                            Container(
+                              height: gridSize,
+                              width: gridSize,
+                              margin: const EdgeInsets.all(gridMargin / 2),
+                              color: Colors.grey[900],
+                              child: GridView.count(
+                                childAspectRatio: 1,
+                                physics: const NeverScrollableScrollPhysics(),
+                                shrinkWrap: true,
+                                padding: const EdgeInsets.all(Tile.tileMargin),
+                                crossAxisCount: rowSize,
+                                children: List<Widget>.generate(
+                                  rowSize * rowSize,
+                                  (int index) => tiles[index],
+                                ),
+                              ),
+                            ),
                           ],
-                        ),
-                      ),
-                      Container(
-                        height: gridSize,
-                        width: gridSize,
-                        margin: const EdgeInsets.all(gridMargin / 2),
-                        color: Colors.grey[900],
-                        child: GridView.count(
-                          childAspectRatio: 1,
-                          physics: const NeverScrollableScrollPhysics(),
-                          shrinkWrap: true,
-                          padding: const EdgeInsets.all(Tile.tileMargin),
-                          crossAxisCount: rowSize,
-                          children: List<Widget>.generate(
-                            rowSize * rowSize,
-                            (int index) => tiles[index],
-                          ),
-                        ),
-                      ),
-                    ],
-                  );
-                },
-              ),
+                        );
+                      },
+                    );
+                  }),
             ),
           ),
         ],
