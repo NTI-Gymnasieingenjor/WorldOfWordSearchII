@@ -196,54 +196,15 @@ class GameState extends State<Game> {
       context: context,
       builder: (BuildContext context) {
         finishDialogOpen = true;
-        return Center(
-          child: Container(
-            constraints: const BoxConstraints(maxHeight: 300),
-            margin: const EdgeInsets.all(16),
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(5),
-              child: Stack(
-                children: <Widget>[
-                  Image.asset("assets/Ratwithegg.png"),
-                  Column(
-                    mainAxisSize: MainAxisSize.max,
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: <Widget>[
-                      const Align(
-                        alignment: Alignment.topLeft,
-                        child: Padding(
-                          padding: EdgeInsets.only(left: 10, top: 4),
-                          child: Text(
-                            "You won!",
-                            style: TextStyle(
-                              color: Colors.white,
-                              decoration: TextDecoration.none,
-                              fontSize: 40,
-                            ),
-                          ),
-                        ),
-                      ),
-                      Align(
-                        alignment: Alignment.bottomRight,
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 5, horizontal: 5),
-                          child: CupertinoButton(
-                            color: Colors.yellow,
-                            borderRadius: BorderRadius.circular(5),
-                            padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 4),
-                            child: const Text("Restart", style: TextStyle(color: Colors.black)),
-                            onPressed: () {
-                              Navigator.pop(context);
-                            },
-                          ),
-                        ),
-                      )
-                    ],
-                  ),
-                ],
-              ),
-            ),
-          ),
+        return AlertDialog(
+          content: Text("Your time: ${stopWatchWidget.formatTime()}"),
+          title: const Text("You completed this level"),
+          actions: <Widget>[
+            CupertinoButton(
+              child: const Text("Continue to next level"),
+              onPressed: () => Navigator.pop(context),
+            )
+          ],
         );
       },
     );
