@@ -167,6 +167,53 @@ class GameState extends State<Game> {
     for (int i = 0; i < wordStack.last.grid.length; i++) {
       if (wordStack.last.grid[i] == null) {
         wordStack.last.grid[i] = Char(i, String.fromCharCode(rand.nextInt(26) + 65));
+        wordStack.last.positions.sort();
+        dev.log(wordStack.last.positions.toString() + (wordStack.last.grid.toString()));
+      }
+    }
+
+    int totalLetters = (wordStack.last.positions.length).toInt();
+    int sizeOfGrid = sqrt(totalLetters).toInt();
+    int letterY = 0;
+    int startLetter = 0;
+    int addingLetter = 0 + letterY * sizeOfGrid;
+    int yVariable = (addingLetter * sizeOfGrid) + letterY * 2;
+    String testWord = "";
+    String testWordY = "";
+    String additionLetter = wordStack.last.grid[addingLetter].toString();
+    String additionLetterY = wordStack.last.grid[yVariable].toString();
+    dev.log(sizeOfGrid.toString() + totalLetters.toString());
+
+    if (wordStack.last.grid[totalLetters - 1] != null) {
+      dev.log("All letter are generated");
+
+      for (startLetter = startLetter; startLetter < totalLetters; startLetter++) {
+        addingLetter = startLetter;
+
+        if (startLetter == sizeOfGrid - 1 + letterY * sizeOfGrid) {
+          letterY++;
+          addingLetter = 0 + letterY * sizeOfGrid;
+          testWord = "";
+        }
+        testWord = "";
+        testWordY = "";
+
+        if (letterY == sizeOfGrid) {
+          break;
+        }
+        for (addingLetter = addingLetter; addingLetter < sizeOfGrid + letterY * sizeOfGrid; addingLetter++) {
+          additionLetter = wordStack.last.grid[addingLetter].toString();
+          testWord = testWord + additionLetter;
+          dev.log("Word for X:" + testWord.toString());
+          yVariable = (addingLetter * sizeOfGrid) + letterY;
+          if (yVariable >= totalLetters) {
+            yVariable -= (totalLetters * letterY);
+          }
+          additionLetterY = wordStack.last.grid[yVariable].toString();
+          testWordY += additionLetterY;
+          dev.log("Word for Y:" + testWordY.toString());
+          dev.log("_________");
+        }
       }
     }
 
