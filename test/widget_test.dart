@@ -1,3 +1,4 @@
+import "dart:developer" as dev;
 import "package:flutter/cupertino.dart";
 import "package:flutter/material.dart";
 import "package:flutter_test/flutter_test.dart";
@@ -153,6 +154,35 @@ void main() {
 
       expect(firstTime != stopWatchWidget.widget.formatTime(), true);
       expect(stopWatchWidget.widget.formatTime() == "00:00:00", true);
+    });
+  });
+
+  testWidgets("Check if difficulty inceases the next level", (WidgetTester tester) async {
+    await tester.runAsync(() async {
+      await tester.pumpWidget(MyApp());
+      await tester.pumpAndSettle();
+      final GameState pageState = tester.state(find.byType(Game));
+      await tester.pumpAndSettle();
+
+      final int lastDiff = pageState.currentDifficulty;
+      final int lastRowSize = pageState.rowSize;
+      final Finder tiles = find.byType(Tile);
+      for (final String word in pageState.correctWords) {
+        for (final String id in word.split(",")) {
+          await tester.tap(tiles.at(int.parse(id)));
+          await tester.pumpAndSettle();
+        }
+        await tester.pumpAndSettle();
+      }
+      await tester.pumpAndSettle();
+      expect(pageState.correctWords.length, 0);
+      expect(pageState.finishDialogOpen, true);
+
+      await tester.tap(find.byType(CupertinoButton));
+      await tester.pumpAndSettle();
+
+      expect(lastDiff < pageState.currentDifficulty, true);
+      expect(lastRowSize < pageState.rowSize, true);
     });
   });
 }

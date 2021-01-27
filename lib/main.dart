@@ -12,10 +12,7 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return const MaterialApp(
       title: "Word Of Wordsearch",
-      home: Game(
-        rowSize: 7,
-        numberOfWords: 3,
-      ),
+      home: Game(),
     );
   }
 }

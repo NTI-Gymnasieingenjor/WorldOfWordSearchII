@@ -3,13 +3,15 @@ import "dart:developer" as dev;
 import "package:firebase_database/firebase_database.dart";
 import "package:flutter/cupertino.dart";
 import "package:flutter/material.dart";
+import "package:auto_size_text/auto_size_text.dart";
 
 import "main.dart";
 
 class Tile extends StatefulWidget {
+  const Tile({Key key, this.char, this.onClick, this.winnerWinner}) : super(key: key);
+
   static const double tileMargin = 0.75;
 
-  const Tile({Key key, this.char, this.onClick, this.winnerWinner}) : super(key: key);
   final Char char;
   final void Function(Char letter, bool selected) onClick;
   final void Function() winnerWinner;
@@ -55,9 +57,12 @@ class TileState extends State<Tile> {
         margin: const EdgeInsets.all(Tile.tileMargin),
         color: tileColor,
         child: Center(
-          child: Text(
+          child: AutoSizeText(
             widget.char.char.toUpperCase(),
             style: const TextStyle(color: Colors.pinkAccent, fontSize: 35),
+            maxLines: 1,
+            minFontSize: 23,
+            maxFontSize: 35,
           ),
         ),
       ),
