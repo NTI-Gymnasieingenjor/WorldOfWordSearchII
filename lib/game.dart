@@ -11,18 +11,20 @@ import "stopwatch_widget.dart";
 import "tile.dart";
 
 class Difficulty {
-  const Difficulty(this.name, this.rowSizeMin, this.rowSizeMax);
+  const Difficulty(this.name, this.rowSizeMin, this.rowSizeMax, this.backgroundPath, this.baseColor);
   final String name;
   final int rowSizeMin, rowSizeMax;
+  final String backgroundPath;
+  final Color baseColor;
 }
 
 class Game extends StatefulWidget {
   const Game({Key key}) : super(key: key);
 
   static const List<Difficulty> difficulties = <Difficulty>[
-    Difficulty("Baby Mode", 3, 5),
-    Difficulty("Normal", 6, 8),
-    Difficulty("Hellish", 9, 13)
+    Difficulty("Baby Mode", 3, 5, "./assets/background_baby.jpg", Colors.teal),
+    Difficulty("Normal", 6, 8, "./assets/background_normal.png", Colors.lightBlue),
+    Difficulty("Hellish", 9, 11, "./assets/background_hellish.jpg", Colors.orange)
   ];
 
   @override
@@ -281,11 +283,12 @@ class GameState extends State<Game> {
         rowSize * rowSize,
         (int index) => Tile(
           key: listOfKeys[index],
+          baseColor: Game.difficulties[currentDifficulty].baseColor,
           char: Char(index, grid[index]?.char ?? "_"),
           onClick: (Char char, bool notSelected) => tileClick(char, notSelected),
         ),
       );
-      stopWatchWidget = StopWatchWidget(timerHeight: timerHeight / 2);
+      stopWatchWidget = StopWatchWidget(timerHeight: timerHeight / 2 - 5);
       stopWatchWidget.reset();
       stopWatchWidget.start();
     }
@@ -309,8 +312,8 @@ class GameState extends State<Game> {
         fit: StackFit.expand,
         children: <Widget>[
           Image.asset(
-            "assets/background.png",
-            alignment: Alignment.center,
+            Game.difficulties[currentDifficulty].backgroundPath,
+            alignment: Alignment.topCenter,
             fit: BoxFit.cover,
           ),
           Center(
@@ -352,7 +355,7 @@ class GameState extends State<Game> {
                         height: gridSize,
                         width: gridSize,
                         margin: const EdgeInsets.all(gridMargin / 2),
-                        color: Colors.purple,
+                        color: Colors.grey[900],
                         child: GridView.count(
                           childAspectRatio: 1,
                           physics: const NeverScrollableScrollPhysics(),

@@ -52,21 +52,18 @@ class StopWatchWidgetState extends State<StopWatchWidget> {
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
-      height: widget.timerHeight,
-      child: Text(
-        widget.formatTime(),
-        style: TextStyle(
-          color: Colors.white,
-          fontSize: widget.timerHeight,
-          shadows: const <Shadow>[
-            Shadow(
-              color: Colors.black,
-              offset: Offset(3, 5),
-              blurRadius: 8,
-            )
-          ],
-        ),
+    return Text(
+      widget.formatTime(),
+      style: TextStyle(
+        color: Colors.white,
+        fontSize: widget.timerHeight,
+        shadows: const <Shadow>[
+          Shadow(
+            color: Colors.black,
+            offset: Offset(3, 5),
+            blurRadius: 8,
+          )
+        ],
       ),
     );
   }

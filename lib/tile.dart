@@ -8,29 +8,38 @@ import "package:auto_size_text/auto_size_text.dart";
 import "main.dart";
 
 class Tile extends StatefulWidget {
-  const Tile({Key key, this.char, this.onClick, this.winnerWinner}) : super(key: key);
+  const Tile({Key key, this.char, this.onClick, this.baseColor}) : super(key: key);
 
   static const double tileMargin = 0.75;
 
+  final Color baseColor;
   final Char char;
   final void Function(Char letter, bool selected) onClick;
-  final void Function() winnerWinner;
   @override
   TileState createState() => TileState();
 }
 
 class TileState extends State<Tile> {
-  static const Color colorClicked = Color(0xff98fb98);
-  static const Color baseColor = Colors.yellow;
-  static const Color selectedBaseColor = Colors.white;
+  // static const Color correctBaseColor = Colors.white;
 
   bool notSelected = true;
-  Color normalColor = Colors.yellow;
-  Color tileColor = Colors.yellow;
+  Color normalColor;
+  Color tileColor;
+  Color colorClicked;
+  Color correctBaseColor;
+
+  @override
+  void initState() {
+    super.initState();
+    normalColor = widget.baseColor;
+    tileColor = widget.baseColor;
+    colorClicked = widget.baseColor.withOpacity(0.75);
+    correctBaseColor = widget.baseColor.withOpacity(0.4);
+  }
 
   void setCorrect(bool correct) {
     setState(() {
-      normalColor = correct ? selectedBaseColor : baseColor;
+      normalColor = correct ? correctBaseColor : widget.baseColor;
       tileColor = normalColor;
       notSelected = true;
     });
@@ -53,13 +62,14 @@ class TileState extends State<Tile> {
           widget.onClick(widget.char, notSelected);
         });
       },
-      child: Container(
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 50),
         margin: const EdgeInsets.all(Tile.tileMargin),
         color: tileColor,
         child: Center(
           child: AutoSizeText(
             widget.char.char.toUpperCase(),
-            style: const TextStyle(color: Colors.pinkAccent, fontSize: 35),
+            style: const TextStyle(color: Colors.black, fontSize: 35),
             maxLines: 1,
             minFontSize: 23,
             maxFontSize: 35,

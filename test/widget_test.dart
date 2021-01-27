@@ -112,7 +112,7 @@ void main() {
       expect(pageState.usedLetters.isEmpty, true);
       for (final GlobalKey<TileState> key in pageState.listOfKeys) {
         final TileState state = key.currentState;
-        expect(state.tileColor, TileState.baseColor);
+        expect(state.tileColor, state.widget.baseColor);
         expect(state.notSelected, true);
       }
     });
