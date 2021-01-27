@@ -8,7 +8,7 @@ class StopWatchWidget extends StatefulWidget {
 
   final double timerHeight;
 
-  Stopwatch stopwatch = Stopwatch();
+  final Stopwatch stopwatch = Stopwatch();
 
   void stop() {
     stopwatch.stop();
@@ -61,7 +61,7 @@ class StopWatchWidgetState extends State<StopWatchWidget> {
           fontSize: widget.timerHeight,
           shadows: const <Shadow>[
             Shadow(
-              color: Colors.purple,
+              color: Colors.black,
               offset: Offset(3, 5),
               blurRadius: 8,
             )

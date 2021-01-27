@@ -10,11 +10,20 @@ import "main.dart";
 import "stopwatch_widget.dart";
 import "tile.dart";
 
-class Game extends StatefulWidget {
-  const Game({Key key, @required this.rowSize, @required this.numberOfWords}) : super(key: key);
+class Difficulty {
+  const Difficulty(this.name, this.rowSizeMin, this.rowSizeMax);
+  final String name;
+  final int rowSizeMin, rowSizeMax;
+}
 
-  final int rowSize;
-  final int numberOfWords;
+class Game extends StatefulWidget {
+  const Game({Key key}) : super(key: key);
+
+  static const List<Difficulty> difficulties = <Difficulty>[
+    Difficulty("Baby Mode", 3, 5),
+    Difficulty("Normal", 6, 8),
+    Difficulty("Hellish", 9, 13)
+  ];
 
   @override
   GameState createState() => GameState();
@@ -29,12 +38,16 @@ class GameState extends State<Game> {
   List<Char> grid;
 
   static const double gridMargin = 20;
-  static const double timerHeight = 50;
+  static const double timerHeight = 60;
 
   StopWatchWidget stopWatchWidget;
 
   List<GlobalKey<TileState>> listOfKeys;
   List<Tile> tiles;
+
+  int currentDifficulty = 0;
+  int rowSize = 0;
+  int wordCount = 0;
 
   // When clicking each game tile
   void tileClick(Char char, bool notSelected) {
@@ -70,7 +83,7 @@ class GameState extends State<Game> {
         }
         clear();
       }
-      if (usedLetters.length >= widget.rowSize) clear();
+      if (usedLetters.length >= rowSize) clear();
     }
   }
 
@@ -233,6 +246,7 @@ class GameState extends State<Game> {
       },
     );
     setState(() {
+      currentDifficulty = (currentDifficulty + 1) % Game.difficulties.length;
       finishDialogOpen = false;
       clear();
       listOfKeys.forEach((GlobalKey<TileState> key) {
@@ -247,26 +261,31 @@ class GameState extends State<Game> {
   bool hasWon() => (correctWords = correctWords.where((String e) => usedLetters.join(",") != e).toList()).isEmpty;
 
   List<String> getWords(List<String> words) {
-    final List<String> compatibleWords = words.where((String w) => w.length <= widget.rowSize).toList();
+    final List<String> compatibleWords = words.where((String w) => w.length <= rowSize).toList();
     compatibleWords.shuffle();
-    return compatibleWords.getRange(0, widget.numberOfWords).toList();
+    return compatibleWords.getRange(0, wordCount).toList();
   }
 
   void startGame(AsyncSnapshot<dynamic> wordsSnapshot) {
     if (correctWords.isEmpty && !finishDialogOpen) {
+      final int max = Game.difficulties[currentDifficulty].rowSizeMax;
+      final int min = Game.difficulties[currentDifficulty].rowSizeMin;
+      rowSize = Random().nextInt(max - min + 1) + min;
+      wordCount = rand.nextInt(rowSize - (rowSize / 2).ceil()) + (rowSize / 2).ceil();
+      dev.log(wordCount.toString());
+
       words = getWords(wordsSnapshot.data.toString().replaceAll("\r", "").split("\n"));
-      grid = generateGrid(words, widget.rowSize);
-      listOfKeys =
-          List<GlobalKey<TileState>>.generate(widget.rowSize * widget.rowSize, (int i) => GlobalKey<TileState>());
+      grid = generateGrid(words, rowSize);
+      listOfKeys = List<GlobalKey<TileState>>.generate(rowSize * rowSize, (int i) => GlobalKey<TileState>());
       tiles = List<Tile>.generate(
-        widget.rowSize * widget.rowSize,
+        rowSize * rowSize,
         (int index) => Tile(
           key: listOfKeys[index],
           char: Char(index, grid[index]?.char ?? "_"),
           onClick: (Char char, bool notSelected) => tileClick(char, notSelected),
         ),
       );
-      stopWatchWidget = StopWatchWidget(timerHeight: timerHeight);
+      stopWatchWidget = StopWatchWidget(timerHeight: timerHeight / 2);
       stopWatchWidget.reset();
       stopWatchWidget.start();
     }
@@ -305,7 +324,30 @@ class GameState extends State<Game> {
                     crossAxisAlignment: CrossAxisAlignment.center,
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: <Widget>[
-                      stopWatchWidget,
+                      SizedBox(
+                        height: timerHeight,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: <Widget>[
+                            stopWatchWidget,
+                            Text(
+                              Game.difficulties[currentDifficulty].name,
+                              style: const TextStyle(
+                                fontSize: timerHeight / 2 - 5,
+                                color: Colors.white,
+                                shadows: <Shadow>[
+                                  Shadow(
+                                    color: Colors.black,
+                                    offset: Offset(3, 5),
+                                    blurRadius: 8,
+                                  )
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
                       Container(
                         height: gridSize,
                         width: gridSize,
@@ -316,9 +358,9 @@ class GameState extends State<Game> {
                           physics: const NeverScrollableScrollPhysics(),
                           shrinkWrap: true,
                           padding: const EdgeInsets.all(Tile.tileMargin),
-                          crossAxisCount: widget.rowSize,
+                          crossAxisCount: rowSize,
                           children: List<Widget>.generate(
-                            widget.rowSize * widget.rowSize,
+                            rowSize * rowSize,
                             (int index) => tiles[index],
                           ),
                         ),
