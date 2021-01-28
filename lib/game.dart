@@ -232,7 +232,6 @@ class GameState extends State<Game> {
         wordStack.last.grid[i] = Char(i, String.fromCharCode(rand.nextInt(26) + 65));
       }
     }
-    words.sort();
 
     if (containsBadWords(wordStack.last.grid, bWords, <String>[], 0, 0, 0, false)) {
       // TODO: Remove bad words from grid
