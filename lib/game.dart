@@ -302,6 +302,7 @@ class GameState extends State<Game> {
       dev.log(wordCount.toString());
 
       List<String> bWords = bWordsSnapshot.data.toString().replaceAll("\r", "").split("\n");
+      bWords.sort();
       words = getWords(wordsSnapshot.data.toString().replaceAll("\r", "").split("\n"));
       grid = generateGrid(words, rowSize, bWords);
       listOfKeys = List<GlobalKey<TileState>>.generate(rowSize * rowSize, (int i) => GlobalKey<TileState>());
@@ -322,11 +323,6 @@ class GameState extends State<Game> {
 
   @override
   Widget build(BuildContext context) {
-    final List<String> bWordsYeet = ["bajs", "magnus", "mamma", "yeet"];
-
-    dev.log(bWordsYeet[binarySearchPrefix(bWordsYeet, "ba")]);
-    dev.log(bWordsYeet[binarySearchPrefix(bWordsYeet, "ma")]);
-
     final MediaQueryData mqData = MediaQuery.of(context);
     // Scales the grid to fit the screen
     double gridSize = 200;
