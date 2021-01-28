@@ -11,7 +11,8 @@ import "stopwatch_widget.dart";
 import "tile.dart";
 
 class Difficulty {
-  const Difficulty(this.name, this.rowSizeMin, this.rowSizeMax, this.backgroundPath, this.baseColor);
+  const Difficulty(this.name, this.rowSizeMin, this.rowSizeMax,
+      this.backgroundPath, this.baseColor);
   final String name;
   final int rowSizeMin, rowSizeMax;
   final String backgroundPath;
@@ -23,8 +24,10 @@ class Game extends StatefulWidget {
 
   static const List<Difficulty> difficulties = <Difficulty>[
     Difficulty("Baby Mode", 3, 5, "./assets/background_baby.jpg", Colors.teal),
-    Difficulty("Normal", 6, 8, "./assets/background_normal.png", Colors.lightBlue),
-    Difficulty("Hellish", 9, 11, "./assets/background_hellish.jpg", Colors.orange)
+    Difficulty(
+        "Normal", 6, 8, "./assets/background_normal.png", Colors.lightBlue),
+    Difficulty(
+        "Hellish", 9, 11, "./assets/background_hellish.jpg", Colors.orange)
   ];
 
   @override
@@ -37,6 +40,7 @@ class GameState extends State<Game> {
   bool finishDialogOpen = false;
   Random rand = Random();
   List<String> words;
+  List<String> bWords;
   List<Char> grid;
 
   static const double gridMargin = 20;
@@ -90,7 +94,8 @@ class GameState extends State<Game> {
   }
 
   // Tries to place word in grid and returns the grid if if fits
-  List<Char> tryWord(List<Char> grid, String word, int gridSize, int position, int dir) {
+  List<Char> tryWord(
+      List<Char> grid, String word, int gridSize, int position, int dir) {
     final int xPos = position % gridSize;
     final int yPos = (position / gridSize).floor();
     final List<int> indices = <int>[];
@@ -122,16 +127,18 @@ class GameState extends State<Game> {
     return tempGrid;
   }
 
-  List<Char> generateGrid(List<String> words, int gridSize, List<String> bWords) {
+  List<Char> generateGrid(List<String> words, int gridSize) {
     correctWords.clear();
     usedLetters.clear();
     words.shuffle();
-    final List<int> positions = List<int>.generate(gridSize * gridSize, (int index) => index);
+    final List<int> positions =
+        List<int>.generate(gridSize * gridSize, (int index) => index);
     final List<int> directions = List<int>.generate(3, (int index) => index);
 
     final List<Word> wordStack = <Word>[];
 
-    wordStack.add(Word(words[0], List<Char>(gridSize * gridSize), positions, directions));
+    wordStack.add(
+        Word(words[0], List<Char>(gridSize * gridSize), positions, directions));
 
     while (true) {
       if (wordStack.isEmpty) {
@@ -151,10 +158,12 @@ class GameState extends State<Game> {
         correctWords.removeLast();
       } else {
         final int pos = wordStack.last.positions.last;
-        final List<Char> grid = tryWord(wordStack.last.grid, wordStack.last.word, gridSize, pos, dir);
+        final List<Char> grid = tryWord(
+            wordStack.last.grid, wordStack.last.word, gridSize, pos, dir);
         if (grid != null) {
           if (wordStack.length < words.length) {
-            wordStack.add(Word(words[wordStack.length], grid, positions, directions));
+            wordStack.add(
+                Word(words[wordStack.length], grid, positions, directions));
           } else {
             wordStack.add(Word(words[0], grid, positions, directions));
             break;
@@ -166,12 +175,18 @@ class GameState extends State<Game> {
     // Places random letters in the empty spaces
     for (int i = 0; i < wordStack.last.grid.length; i++) {
       if (wordStack.last.grid[i] == null) {
-        wordStack.last.grid[i] = Char(i, String.fromCharCode(rand.nextInt(26) + 65));
+        wordStack.last.grid[i] =
+            Char(i, String.fromCharCode(rand.nextInt(26) + 65));
         wordStack.last.positions.sort();
-        dev.log(wordStack.last.positions.toString() + (wordStack.last.grid.toString()));
+        dev.log(wordStack.last.positions.toString() +
+            (wordStack.last.grid.toString()));
       }
     }
-    final int totalLetters = wordStack.last.positions.length;
+    return wordFilter(wordStack.last.grid);
+  }
+
+  List<Char> wordFilter(List<Char> tempGrid) {
+    final int totalLetters = tempGrid.length;
     int letterY = 0;
     int startLetter = 0;
     int addingLetter = 0 + letterY * rowSize;
@@ -180,7 +195,7 @@ class GameState extends State<Game> {
     String testWordY = "";
     dev.log(rowSize.toString() + totalLetters.toString());
 
-    if (wordStack.last.grid[totalLetters - 1] != null) {
+    if (tempGrid[totalLetters - 1] != null) {
       dev.log("All letter are generated");
 
       while (startLetter < totalLetters) {
@@ -197,21 +212,36 @@ class GameState extends State<Game> {
         if (letterY == rowSize) {
           break;
         }
-        for (addingLetter = addingLetter; addingLetter < rowSize + letterY * rowSize; addingLetter++) {
-          testWord += wordStack.last.grid[addingLetter].toString();
+        for (addingLetter = addingLetter;
+            addingLetter < rowSize + letterY * rowSize;
+            addingLetter++) {
+          testWord += tempGrid[addingLetter].toString();
           dev.log("Word for X:" + testWord.toString());
+          if (bWords.contains(testWord)) {
+            dev.log("DEt var ett dåligt ord");
+            if (tempGrid[addingLetter].char.toUpperCase() ==
+                tempGrid[addingLetter].char)
+              tempGrid[addingLetter] = Char(
+                  addingLetter, String.fromCharCode(rand.nextInt(26) + 65));
+          }
           yVariable = (addingLetter * rowSize) + letterY;
           if (yVariable >= totalLetters) {
             yVariable -= totalLetters * letterY;
           }
-          testWordY += wordStack.last.grid[yVariable].toString();
+          testWordY += tempGrid[yVariable].toString();
           dev.log("Word for Y:" + testWordY.toString());
+          if (bWords.contains(testWordY)) {
+            dev.log("DEt var ett dåligt ord");
+            if (tempGrid[yVariable].char.toUpperCase() ==
+                tempGrid[yVariable].char)
+              tempGrid[yVariable] =
+                  Char(yVariable, String.fromCharCode(rand.nextInt(26) + 65));
+          }
           dev.log("_________");
         }
       }
     }
-
-    return wordStack.last.grid;
+    return tempGrid;
   }
 
   // Clears all tiles
@@ -228,8 +258,10 @@ class GameState extends State<Game> {
   // Shows the winning dialog
   void win() async {
     try {
-      final DatabaseReference winsRef = FirebaseDatabase.instance.reference().child("AmountOfGames");
-      winsRef.once().then((DataSnapshot value) => winsRef.set((int.parse(value.value.toString()) ?? 0) + 1));
+      final DatabaseReference winsRef =
+          FirebaseDatabase.instance.reference().child("AmountOfGames");
+      winsRef.once().then((DataSnapshot value) =>
+          winsRef.set((int.parse(value.value.toString()) ?? 0) + 1));
     } catch (e) {
       dev.log(e.toString());
     }
@@ -262,34 +294,42 @@ class GameState extends State<Game> {
   }
 
   // Removes one word from the list if the user has selected the word
-  bool hasWon() => (correctWords = correctWords.where((String e) => usedLetters.join(",") != e).toList()).isEmpty;
+  bool hasWon() => (correctWords =
+          correctWords.where((String e) => usedLetters.join(",") != e).toList())
+      .isEmpty;
 
   List<String> getWords(List<String> words) {
-    final List<String> compatibleWords = words.where((String w) => w.length <= rowSize).toList();
+    final List<String> compatibleWords =
+        words.where((String w) => w.length <= rowSize).toList();
     compatibleWords.shuffle();
     return compatibleWords.getRange(0, wordCount).toList();
   }
 
-  void startGame(AsyncSnapshot<dynamic> wordsSnapshot, AsyncSnapshot<dynamic> bWordsSnapshot) {
+  void startGame(AsyncSnapshot<dynamic> wordsSnapshot,
+      AsyncSnapshot<dynamic> bWordsSnapshot) {
     if (correctWords.isEmpty && !finishDialogOpen) {
       final int max = Game.difficulties[currentDifficulty].rowSizeMax;
       final int min = Game.difficulties[currentDifficulty].rowSizeMin;
       rowSize = Random().nextInt(max - min + 1) + min;
-      wordCount = rand.nextInt(rowSize - (rowSize / 2).ceil()) + (rowSize / 2).ceil();
+      wordCount =
+          rand.nextInt(rowSize - (rowSize / 2).ceil()) + (rowSize / 2).ceil();
       dev.log(wordCount.toString());
 
-      List<String> bWords = bWordsSnapshot.data.toString().replaceAll("\r", "").split("\n");
+      bWords = bWordsSnapshot.data.toString().replaceAll("\r", "").split("\n");
 
-      words = getWords(wordsSnapshot.data.toString().replaceAll("\r", "").split("\n"));
-      grid = generateGrid(words, rowSize, bWords);
-      listOfKeys = List<GlobalKey<TileState>>.generate(rowSize * rowSize, (int i) => GlobalKey<TileState>());
+      words = getWords(
+          wordsSnapshot.data.toString().replaceAll("\r", "").split("\n"));
+      grid = generateGrid(words, rowSize);
+      listOfKeys = List<GlobalKey<TileState>>.generate(
+          rowSize * rowSize, (int i) => GlobalKey<TileState>());
       tiles = List<Tile>.generate(
         rowSize * rowSize,
         (int index) => Tile(
           key: listOfKeys[index],
           baseColor: Game.difficulties[currentDifficulty].baseColor,
           char: Char(index, grid[index]?.char ?? "_"),
-          onClick: (Char char, bool notSelected) => tileClick(char, notSelected),
+          onClick: (Char char, bool notSelected) =>
+              tileClick(char, notSelected),
         ),
       );
       stopWatchWidget = StopWatchWidget(timerHeight: timerHeight / 2 - 5);
@@ -324,11 +364,13 @@ class GameState extends State<Game> {
             child: SafeArea(
               child: FutureBuilder<dynamic>(
                   future: rootBundle.loadString("assets/bwords.txt"),
-                  builder: (BuildContext context, AsyncSnapshot<dynamic> bWordsSnapshot) {
+                  builder: (BuildContext context,
+                      AsyncSnapshot<dynamic> bWordsSnapshot) {
                     if (!bWordsSnapshot.hasData) return Container();
                     return FutureBuilder<dynamic>(
                       future: rootBundle.loadString("assets/words.txt"),
-                      builder: (BuildContext context, AsyncSnapshot<dynamic> wordsSnapshot) {
+                      builder: (BuildContext context,
+                          AsyncSnapshot<dynamic> wordsSnapshot) {
                         if (!wordsSnapshot.hasData) return Container();
                         startGame(wordsSnapshot, bWordsSnapshot);
                         return Column(
