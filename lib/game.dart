@@ -160,8 +160,11 @@ class GameState extends State<Game> {
       for (int i = arr.length - 1; i >= 0; i--) {
         final int result = binarySearchPrefix(bWords, (arr[i] + grid[pos].toString()).toLowerCase());
         if (result == -2) {
-          if (grid[pos].char.toUpperCase() == grid[pos].char) {
-            grid[pos] = Char(pos, String.fromCharCode(rand.nextInt(26) + 65));
+          final String curChar = grid[pos].char;
+          if (curChar.toUpperCase() == curChar) {
+            do {
+              grid[pos] = Char(pos, String.fromCharCode(rand.nextInt(26) + 65));
+            } while (grid[pos].char == curChar);
           }
           //return true;
         } else if (result == -1) {
