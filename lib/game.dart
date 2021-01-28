@@ -38,6 +38,7 @@ class GameState extends State<Game> {
   bool finishDialogOpen = false;
   Random rand = Random();
   List<String> words;
+  List<String> bWords;
   List<Char> grid;
 
   static const double gridMargin = 20;
@@ -147,44 +148,43 @@ class GameState extends State<Game> {
     return -1;
   }
 
-  void filterBadWords(
-      List<Char> grid, List<String> badWords, List<String> arr, int depth, int dir, int pos, bool forceDir) {
+  void filterBadWords(List<Char> grid, List<String> arr, int depth, int dir, int pos, bool forceDir) {
     if (depth >= rowSize) {
       return;
     }
 
     if (dir == 0) {
-      filterBadWords(grid, badWords, <String>[], depth, 0x1, pos, forceDir);
-      filterBadWords(grid, badWords, <String>[], depth, 0x2, pos, forceDir);
+      filterBadWords(grid, <String>[], depth, 0x1, pos, forceDir);
+      filterBadWords(grid, <String>[], depth, 0x2, pos, forceDir);
     } else {
       for (int i = arr.length - 1; i >= 0; i--) {
-        final int result = binarySearchPrefix(badWords, arr[i] + grid[pos].toString());
+        final int result = binarySearchPrefix(bWords, (arr[i] + grid[pos].toString()).toLowerCase());
         if (result == -2) {
           if (grid[pos].char.toUpperCase() == grid[pos].char) {
-            grid[pos] = Char(i, String.fromCharCode(rand.nextInt(26) + 65));
+            grid[pos] = Char(pos, String.fromCharCode(rand.nextInt(26) + 65));
           }
           //return true;
         } else if (result == -1) {
           arr.removeAt(i);
         } else {
-          arr[i] = arr[i] + grid[pos].toString();
+          arr[i] = arr[i] + grid[pos].toString().toLowerCase();
         }
       }
 
-      arr.add(grid[pos].toString());
+      arr.add(grid[pos].toString().toLowerCase());
 
       if (!forceDir) {
-        filterBadWords(grid, badWords, <String>[], 0, (~dir) & 0x3, pos, true);
-        filterBadWords(grid, badWords, <String>[], depth, 0x3, pos, true);
+        filterBadWords(grid, <String>[], 0, (~dir) & 0x3, pos, true);
+        filterBadWords(grid, <String>[], depth, 0x3, pos, true);
       }
 
       pos += ((dir & 0x2) >> 1) * rowSize + (dir & 0x1);
 
-      filterBadWords(grid, badWords, arr, depth + 1, dir, pos, forceDir);
+      filterBadWords(grid, arr, depth + 1, dir, pos, forceDir);
     }
   }
 
-  List<Char> generateGrid(List<String> words, int gridSize, List<String> bWords) {
+  List<Char> generateGrid(List<String> words, int gridSize) {
     correctWords.clear();
     usedLetters.clear();
     words.shuffle();
@@ -232,7 +232,7 @@ class GameState extends State<Game> {
       }
     }
 
-    filterBadWords(wordStack.last.grid, bWords, <String>[], 0, 0, 0, false);
+    filterBadWords(wordStack.last.grid, <String>[], 0, 0, 0, false);
 
     return wordStack.last.grid;
   }
@@ -301,10 +301,10 @@ class GameState extends State<Game> {
       wordCount = rand.nextInt(rowSize - (rowSize / 2).ceil()) + (rowSize / 2).ceil();
       dev.log(wordCount.toString());
 
-      List<String> bWords = bWordsSnapshot.data.toString().replaceAll("\r", "").split("\n");
+      bWords = bWordsSnapshot.data.toString().replaceAll("\r", "").split("\n");
       bWords.sort();
       words = getWords(wordsSnapshot.data.toString().replaceAll("\r", "").split("\n"));
-      grid = generateGrid(words, rowSize, bWords);
+      grid = generateGrid(words, rowSize);
       listOfKeys = List<GlobalKey<TileState>>.generate(rowSize * rowSize, (int i) => GlobalKey<TileState>());
       tiles = List<Tile>.generate(
         rowSize * rowSize,
