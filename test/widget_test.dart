@@ -185,4 +185,65 @@ void main() {
       expect(lastRowSize < pageState.rowSize, true);
     });
   });
+
+  testWidgets("Check if wordfilter works (Horizontal)", (WidgetTester tester) async {
+    await tester.runAsync(() async {
+      await tester.pumpWidget(MyApp());
+      await tester.pumpAndSettle();
+      final GameState pageState = tester.state(find.byType(Game));
+      await tester.pumpAndSettle();
+
+      final List<Char> tempGrid = pageState.grid;
+      tempGrid[0] = const Char(0, "W");
+      tempGrid[1] = const Char(1, "O");
+      tempGrid[2] = const Char(2, "P");
+
+      debugPrint(tempGrid.toString());
+      pageState.filterBadWords(tempGrid, <String>[], 0, 1, 0, true);
+      debugPrint(tempGrid.toString());
+      await tester.pumpAndSettle();
+      debugPrint(tempGrid.toString());
+
+      expect(tempGrid[0].char != "P", true);
+    });
+  });
+
+  testWidgets("Check if wordfilter works (Vertical)", (WidgetTester tester) async {
+    await tester.runAsync(() async {
+      await tester.pumpWidget(MyApp());
+      await tester.pumpAndSettle();
+      final GameState pageState = tester.state(find.byType(Game));
+      await tester.pumpAndSettle();
+
+      final List<Char> tempGrid = pageState.grid;
+      tempGrid[0] = const Char(0, "W");
+      tempGrid[pageState.rowSize] = const Char(3, "O");
+      tempGrid[pageState.rowSize * 2] = const Char(6, "P");
+      debugPrint(tempGrid.toString());
+      pageState.filterBadWords(tempGrid, <String>[], 0, 2, 0, true);
+      debugPrint(tempGrid.toString());
+      await tester.pumpAndSettle();
+      debugPrint(tempGrid.toString());
+
+      expect(tempGrid[pageState.rowSize * 2].char != "P", true);
+    });
+  });
+
+  testWidgets("Check if wordfilter works (Diagonal)", (WidgetTester tester) async {
+    await tester.runAsync(() async {
+      await tester.pumpWidget(MyApp());
+      await tester.pumpAndSettle();
+      final GameState pageState = tester.state(find.byType(Game));
+      await tester.pumpAndSettle();
+
+      final List<Char> tempGrid = pageState.grid;
+      tempGrid[0] = const Char(0, "W");
+      tempGrid[1 + pageState.rowSize] = const Char(4, "O");
+      tempGrid[2 + pageState.rowSize * 2] = const Char(8, "P");
+      pageState.filterBadWords(tempGrid, <String>[], 0, 3, 0, true);
+      await tester.pumpAndSettle();
+
+      expect(tempGrid[2 + pageState.rowSize * 2].char != "P", true);
+    });
+  });
 }
