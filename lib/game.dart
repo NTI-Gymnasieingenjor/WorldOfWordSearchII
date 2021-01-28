@@ -147,20 +147,23 @@ class GameState extends State<Game> {
     return -1;
   }
 
-  bool containsBadWords(
+  void filterBadWords(
       List<Char> grid, List<String> badWords, List<String> arr, int depth, int dir, int pos, bool forceDir) {
     if (depth >= rowSize) {
-      return false;
+      return;
     }
 
     if (dir == 0) {
-      return containsBadWords(grid, badWords, <String>[], depth, 0x1, pos, forceDir) ||
-          containsBadWords(grid, badWords, <String>[], depth, 0x2, pos, forceDir);
+      filterBadWords(grid, badWords, <String>[], depth, 0x1, pos, forceDir);
+      filterBadWords(grid, badWords, <String>[], depth, 0x2, pos, forceDir);
     } else {
       for (int i = arr.length - 1; i >= 0; i--) {
         final int result = binarySearchPrefix(badWords, arr[i] + grid[pos].toString());
         if (result == -2) {
-          return true;
+          if (grid[pos].char.toUpperCase() == grid[pos].char) {
+            grid[pos] = Char(i, String.fromCharCode(rand.nextInt(26) + 65));
+          }
+          //return true;
         } else if (result == -1) {
           arr.removeAt(i);
         } else {
@@ -171,17 +174,13 @@ class GameState extends State<Game> {
       arr.add(grid[pos].toString());
 
       if (!forceDir) {
-        if (containsBadWords(grid, badWords, <String>[], 0, (~dir) & 0x3, pos, true)) {
-          return true;
-        }
-        if (containsBadWords(grid, badWords, <String>[], depth, 0x3, pos, true)) {
-          return true;
-        }
+        filterBadWords(grid, badWords, <String>[], 0, (~dir) & 0x3, pos, true);
+        filterBadWords(grid, badWords, <String>[], depth, 0x3, pos, true);
       }
 
       pos += ((dir & 0x2) >> 1) * rowSize + (dir & 0x1);
 
-      return containsBadWords(grid, badWords, arr, depth + 1, dir, pos, forceDir);
+      filterBadWords(grid, badWords, arr, depth + 1, dir, pos, forceDir);
     }
   }
 
@@ -233,9 +232,7 @@ class GameState extends State<Game> {
       }
     }
 
-    if (containsBadWords(wordStack.last.grid, bWords, <String>[], 0, 0, 0, false)) {
-      // TODO: Remove bad words from grid
-    }
+    filterBadWords(wordStack.last.grid, bWords, <String>[], 0, 0, 0, false);
 
     return wordStack.last.grid;
   }
