@@ -11,11 +11,12 @@ import "stopwatch_widget.dart";
 import "tile.dart";
 
 class Difficulty {
-  const Difficulty(this.name, this.rowSizeMin, this.rowSizeMax, this.backgroundPath, this.baseColor);
   final String name;
   final int rowSizeMin, rowSizeMax;
   final String backgroundPath;
   final Color baseColor;
+
+  const Difficulty(this.name, this.rowSizeMin, this.rowSizeMax, this.backgroundPath, this.baseColor);
 }
 
 class Game extends StatefulWidget {
@@ -122,7 +123,69 @@ class GameState extends State<Game> {
     return tempGrid;
   }
 
-  List<Char> generateGrid(List<String> words, int gridSize) {
+  int binarySearchPrefix(List<String> arr, String prefix) {
+    int l = 0;
+    int r = arr.length - 1;
+    while (l <= r) {
+      final int mid = (l + (r - l) / 2).toInt();
+
+      final int res = prefix.compareTo(arr[mid]);
+
+      if (res == 0) return -2;
+
+      if (arr[mid].startsWith(prefix)) {
+        return mid;
+      } else {
+        if (res > 0) {
+          l = mid + 1;
+        } else {
+          r = mid - 1;
+        }
+      }
+    }
+
+    return -1;
+  }
+
+  bool containsBadWords(
+      List<Char> grid, List<String> badWords, List<String> arr, int depth, int dir, int pos, bool forceDir) {
+    if (depth >= rowSize) {
+      return false;
+    }
+
+    if (dir == 0) {
+      return containsBadWords(grid, badWords, <String>[], depth, 0x1, pos, forceDir) ||
+          containsBadWords(grid, badWords, <String>[], depth, 0x2, pos, forceDir);
+    } else {
+      for (int i = arr.length - 1; i >= 0; i--) {
+        final int result = binarySearchPrefix(badWords, arr[i] + grid[pos].toString());
+        if (result == -2) {
+          return true;
+        } else if (result == -1) {
+          arr.removeAt(i);
+        } else {
+          arr[i] = arr[i] + grid[pos].toString();
+        }
+      }
+
+      arr.add(grid[pos].toString());
+
+      if (!forceDir) {
+        if (containsBadWords(grid, badWords, <String>[], 0, (~dir) & 0x3, pos, true)) {
+          return true;
+        }
+        if (containsBadWords(grid, badWords, <String>[], depth, 0x3, pos, true)) {
+          return true;
+        }
+      }
+
+      pos += ((dir & 0x2) >> 1) * rowSize + (dir & 0x1);
+
+      return containsBadWords(grid, badWords, arr, depth + 1, dir, pos, forceDir);
+    }
+  }
+
+  List<Char> generateGrid(List<String> words, int gridSize, List<String> bWords) {
     correctWords.clear();
     usedLetters.clear();
     words.shuffle();
@@ -168,6 +231,11 @@ class GameState extends State<Game> {
       if (wordStack.last.grid[i] == null) {
         wordStack.last.grid[i] = Char(i, String.fromCharCode(rand.nextInt(26) + 65));
       }
+    }
+    words.sort();
+
+    if (containsBadWords(wordStack.last.grid, bWords, <String>[], 0, 0, 0, false)) {
+      // TODO: generate new grid
     }
 
     return wordStack.last.grid;
@@ -229,7 +297,7 @@ class GameState extends State<Game> {
     return compatibleWords.getRange(0, wordCount).toList();
   }
 
-  void startGame(AsyncSnapshot<dynamic> wordsSnapshot) {
+  void startGame(AsyncSnapshot<dynamic> wordsSnapshot, AsyncSnapshot<dynamic> bWordsSnapshot) {
     if (correctWords.isEmpty && !finishDialogOpen) {
       final int max = Game.difficulties[currentDifficulty].rowSizeMax;
       final int min = Game.difficulties[currentDifficulty].rowSizeMin;
@@ -237,8 +305,9 @@ class GameState extends State<Game> {
       wordCount = rand.nextInt(rowSize - (rowSize / 2).ceil()) + (rowSize / 2).ceil();
       dev.log(wordCount.toString());
 
+      List<String> bWords = bWordsSnapshot.data.toString().replaceAll("\r", "").split("\n");
       words = getWords(wordsSnapshot.data.toString().replaceAll("\r", "").split("\n"));
-      grid = generateGrid(words, rowSize);
+      grid = generateGrid(words, rowSize, bWords);
       listOfKeys = List<GlobalKey<TileState>>.generate(rowSize * rowSize, (int i) => GlobalKey<TileState>());
       tiles = List<Tile>.generate(
         rowSize * rowSize,
@@ -257,6 +326,11 @@ class GameState extends State<Game> {
 
   @override
   Widget build(BuildContext context) {
+    final List<String> bWordsYeet = ["bajs", "magnus", "mamma", "yeet"];
+
+    dev.log(bWordsYeet[binarySearchPrefix(bWordsYeet, "ba")]);
+    dev.log(bWordsYeet[binarySearchPrefix(bWordsYeet, "ma")]);
+
     final MediaQueryData mqData = MediaQuery.of(context);
     // Scales the grid to fit the screen
     double gridSize = 200;
@@ -280,59 +354,64 @@ class GameState extends State<Game> {
           Center(
             child: SafeArea(
               child: FutureBuilder<dynamic>(
-                future: rootBundle.loadString("assets/words.txt"),
-                builder: (BuildContext context, AsyncSnapshot<dynamic> wordsSnapshot) {
-                  if (!wordsSnapshot.hasData) return Container();
-                  startGame(wordsSnapshot);
-                  return Column(
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: <Widget>[
-                      SizedBox(
-                        height: timerHeight,
-                        child: Column(
+                  future: rootBundle.loadString("assets/bwords.txt"),
+                  builder: (BuildContext context, AsyncSnapshot<dynamic> bWordsSnapshot) {
+                    if (!bWordsSnapshot.hasData) return Container();
+                    return FutureBuilder<dynamic>(
+                      future: rootBundle.loadString("assets/words.txt"),
+                      builder: (BuildContext context, AsyncSnapshot<dynamic> wordsSnapshot) {
+                        if (!wordsSnapshot.hasData) return Container();
+                        startGame(wordsSnapshot, bWordsSnapshot);
+                        return Column(
                           crossAxisAlignment: CrossAxisAlignment.center,
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: <Widget>[
-                            stopWatchWidget,
-                            Text(
-                              Game.difficulties[currentDifficulty].name,
-                              style: const TextStyle(
-                                fontSize: timerHeight / 2 - 5,
-                                color: Colors.white,
-                                shadows: <Shadow>[
-                                  Shadow(
-                                    color: Colors.black,
-                                    offset: Offset(3, 5),
-                                    blurRadius: 8,
-                                  )
+                            SizedBox(
+                              height: timerHeight,
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.center,
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: <Widget>[
+                                  stopWatchWidget,
+                                  Text(
+                                    Game.difficulties[currentDifficulty].name,
+                                    style: const TextStyle(
+                                      fontSize: timerHeight / 2 - 5,
+                                      color: Colors.white,
+                                      shadows: <Shadow>[
+                                        Shadow(
+                                          color: Colors.black,
+                                          offset: Offset(3, 5),
+                                          blurRadius: 8,
+                                        )
+                                      ],
+                                    ),
+                                  ),
                                 ],
                               ),
                             ),
+                            Container(
+                              height: gridSize,
+                              width: gridSize,
+                              margin: const EdgeInsets.all(gridMargin / 2),
+                              color: Colors.grey[900],
+                              child: GridView.count(
+                                childAspectRatio: 1,
+                                physics: const NeverScrollableScrollPhysics(),
+                                shrinkWrap: true,
+                                padding: const EdgeInsets.all(Tile.tileMargin),
+                                crossAxisCount: rowSize,
+                                children: List<Widget>.generate(
+                                  rowSize * rowSize,
+                                  (int index) => tiles[index],
+                                ),
+                              ),
+                            ),
                           ],
-                        ),
-                      ),
-                      Container(
-                        height: gridSize,
-                        width: gridSize,
-                        margin: const EdgeInsets.all(gridMargin / 2),
-                        color: Colors.grey[900],
-                        child: GridView.count(
-                          childAspectRatio: 1,
-                          physics: const NeverScrollableScrollPhysics(),
-                          shrinkWrap: true,
-                          padding: const EdgeInsets.all(Tile.tileMargin),
-                          crossAxisCount: rowSize,
-                          children: List<Widget>.generate(
-                            rowSize * rowSize,
-                            (int index) => tiles[index],
-                          ),
-                        ),
-                      ),
-                    ],
-                  );
-                },
-              ),
+                        );
+                      },
+                    );
+                  }),
             ),
           ),
         ],

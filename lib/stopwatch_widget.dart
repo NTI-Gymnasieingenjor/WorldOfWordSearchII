@@ -4,8 +4,6 @@ import "package:flutter/cupertino.dart";
 import "package:flutter/material.dart";
 
 class StopWatchWidget extends StatefulWidget {
-  StopWatchWidget({Key key, this.timerHeight}) : super(key: key);
-
   final double timerHeight;
 
   final Stopwatch stopwatch = Stopwatch();
@@ -28,6 +26,8 @@ class StopWatchWidget extends StatefulWidget {
     final String secs = stopwatch.elapsed.inSeconds.remainder(60).toString().padLeft(2, "0");
     return "$hours:$mins:$secs";
   }
+
+  StopWatchWidget({Key key, this.timerHeight}) : super(key: key);
 
   @override
   StopWatchWidgetState createState() => StopWatchWidgetState();

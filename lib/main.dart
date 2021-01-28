@@ -18,10 +18,10 @@ class MyApp extends StatelessWidget {
 }
 
 class Char {
-  const Char(this.id, this.char);
   final int id;
-
   final String char;
+
+  const Char(this.id, this.char);
 
   @override
   String toString() {
@@ -30,15 +30,15 @@ class Char {
 }
 
 class Word {
+  String word;
+  List<int> positions;
+  List<int> directions;
+  List<Char> grid;
+
   Word(this.word, this.grid, List<int> positions, List<int> directions) {
     this.positions = List<int>.from(positions);
     this.positions.shuffle();
     this.directions = List<int>.from(directions);
     this.directions.shuffle();
   }
-
-  String word;
-  List<int> positions;
-  List<int> directions;
-  List<Char> grid;
 }

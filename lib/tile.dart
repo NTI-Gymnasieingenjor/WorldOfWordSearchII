@@ -8,13 +8,14 @@ import "package:auto_size_text/auto_size_text.dart";
 import "main.dart";
 
 class Tile extends StatefulWidget {
-  const Tile({Key key, this.char, this.onClick, this.baseColor}) : super(key: key);
-
   static const double tileMargin = 0.75;
 
   final Color baseColor;
   final Char char;
   final void Function(Char letter, bool selected) onClick;
+
+  const Tile({Key key, this.char, this.onClick, this.baseColor}) : super(key: key);
+
   @override
   TileState createState() => TileState();
 }

@@ -185,7 +185,7 @@ linter:
     # - sized_box_for_whitespace # not yet tested
     - slash_for_doc_comments
     # - sort_child_properties_last # not yet tested
-    - sort_constructors_first
+    # - sort_constructors_first
     # - sort_pub_dependencies # prevents separating pinned transitive dependencies
     - sort_unnamed_constructors_first
     - test_types_in_equals

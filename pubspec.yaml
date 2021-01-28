@@ -53,6 +53,7 @@ flutter:
   assets:
     - assets/
     - assets/words.txt
+    - assets/bwords.txt
   # assets:
   #   - images/a_dot_burr.jpeg
   #   - images/a_dot_ham.jpeg
