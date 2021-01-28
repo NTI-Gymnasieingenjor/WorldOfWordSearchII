@@ -235,7 +235,7 @@ class GameState extends State<Game> {
     words.sort();
 
     if (containsBadWords(wordStack.last.grid, bWords, <String>[], 0, 0, 0, false)) {
-      // TODO: generate new grid
+      // TODO: Remove bad words from grid
     }
 
     return wordStack.last.grid;
