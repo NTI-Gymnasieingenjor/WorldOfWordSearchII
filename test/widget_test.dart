@@ -9,7 +9,8 @@ import "package:WorldOfWordSearchII/stopwatch_widget.dart";
 
 // A firebase database warning is expected but the tests still work
 void main() {
-  testWidgets("Tests clicking correct letters in a word", (WidgetTester tester) async {
+  testWidgets("Tests clicking correct letters in a word",
+      (WidgetTester tester) async {
     await tester.runAsync(() async {
       await tester.pumpWidget(MyApp());
       await tester.pumpAndSettle();
@@ -27,7 +28,8 @@ void main() {
     });
   });
 
-  testWidgets("Tests clicking incorrect letters in a word", (WidgetTester tester) async {
+  testWidgets("Tests clicking incorrect letters in a word",
+      (WidgetTester tester) async {
     await tester.runAsync(() async {
       await tester.pumpWidget(MyApp());
       await tester.pumpAndSettle();
@@ -92,7 +94,8 @@ void main() {
     });
   });
 
-  testWidgets("Check tiles aren't selected after restart", (WidgetTester tester) async {
+  testWidgets("Check tiles aren't selected after restart",
+      (WidgetTester tester) async {
     await tester.runAsync(() async {
       await tester.pumpWidget(MyApp());
       await tester.pumpAndSettle();
@@ -122,7 +125,8 @@ void main() {
     await tester.runAsync(() async {
       await tester.pumpWidget(MyApp());
       await tester.pumpAndSettle();
-      final StopWatchWidgetState stopWatchWidget = tester.state(find.byType(StopWatchWidget));
+      final StopWatchWidgetState stopWatchWidget =
+          tester.state(find.byType(StopWatchWidget));
 
       final String firstTime = stopWatchWidget.widget.formatTime();
       await Future<dynamic>.delayed(const Duration(seconds: 2));
@@ -131,12 +135,14 @@ void main() {
     });
   });
 
-  testWidgets("Check stopwatch restart on game restart", (WidgetTester tester) async {
+  testWidgets("Check stopwatch restart on game restart",
+      (WidgetTester tester) async {
     await tester.runAsync(() async {
       await tester.pumpWidget(MyApp());
       await tester.pumpAndSettle();
       final GameState pageState = tester.state(find.byType(Game));
-      final StopWatchWidgetState stopWatchWidget = tester.state(find.byType(StopWatchWidget));
+      final StopWatchWidgetState stopWatchWidget =
+          tester.state(find.byType(StopWatchWidget));
 
       await Future<dynamic>.delayed(const Duration(seconds: 2));
       final String firstTime = stopWatchWidget.widget.formatTime();
@@ -157,7 +163,8 @@ void main() {
     });
   });
 
-  testWidgets("Check if difficulty inceases the next level", (WidgetTester tester) async {
+  testWidgets("Check if difficulty inceases the next level",
+      (WidgetTester tester) async {
     await tester.runAsync(() async {
       await tester.pumpWidget(MyApp());
       await tester.pumpAndSettle();
@@ -183,6 +190,60 @@ void main() {
 
       expect(lastDiff < pageState.currentDifficulty, true);
       expect(lastRowSize < pageState.rowSize, true);
+    });
+  });
+
+  testWidgets("Check if wordfilter works (Horizontal)",
+      (WidgetTester tester) async {
+    await tester.runAsync(() async {
+      await tester.pumpWidget(MyApp());
+      await tester.pumpAndSettle();
+      final GameState pageState = tester.state(find.byType(Game));
+      await tester.pumpAndSettle();
+
+      final List<Char> tempGrid = pageState.grid;
+      tempGrid[1] = const Char(1, "W");
+      tempGrid[2] = const Char(2, "O");
+      tempGrid[3] = const Char(3, "P");
+      final List<Char> newGrid = pageState.wordFilter(tempGrid);
+
+      expect(newGrid[3].char != "P", true);
+    });
+  });
+
+  testWidgets("Check if wordfilter works (Vertical)",
+      (WidgetTester tester) async {
+    await tester.runAsync(() async {
+      await tester.pumpWidget(MyApp());
+      await tester.pumpAndSettle();
+      final GameState pageState = tester.state(find.byType(Game));
+      await tester.pumpAndSettle();
+
+      final List<Char> tempGrid = pageState.grid;
+      tempGrid[1] = const Char(1, "W");
+      tempGrid[1 + pageState.rowSize] = const Char(5, "O");
+      tempGrid[1 + pageState.rowSize * 2] = const Char(9, "P");
+      final List<Char> newGrid = pageState.wordFilter(tempGrid);
+
+      expect(newGrid[1 + pageState.rowSize * 2].char != "P", true);
+    });
+  });
+
+  testWidgets("Check if wordfilter works (Diagonal)",
+      (WidgetTester tester) async {
+    await tester.runAsync(() async {
+      await tester.pumpWidget(MyApp());
+      await tester.pumpAndSettle();
+      final GameState pageState = tester.state(find.byType(Game));
+      await tester.pumpAndSettle();
+
+      final List<Char> tempGrid = pageState.grid;
+      tempGrid[0] = const Char(1, "W");
+      tempGrid[1 + pageState.rowSize] = const Char(5, "O");
+      tempGrid[2 + pageState.rowSize * 2] = const Char(9, "P");
+      final List<Char> newGrid = pageState.wordFilter(tempGrid);
+
+      expect(newGrid[2 + pageState.rowSize * 2].char != "P", true);
     });
   });
 }
